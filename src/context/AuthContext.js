@@ -37,8 +37,12 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = () => fetchUser();
 
+  // Helper: get brand currency symbol
+  const currency = user?.brand?.currency || 'PKR';
+  const formatCurrency = (n) => `${currency} ${Number(n || 0).toLocaleString()}`;
+
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, refreshUser, setUser }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, refreshUser, setUser, currency, formatCurrency }}>
       {children}
     </AuthContext.Provider>
   );

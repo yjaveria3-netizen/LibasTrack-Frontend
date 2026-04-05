@@ -10,7 +10,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    const newUser = searchParams.get('newUser') === 'true';
+    const needsOnboarding = searchParams.get('needsOnboarding') === 'true';
     const error = searchParams.get('error');
 
     if (error) {
@@ -21,24 +21,30 @@ export default function AuthCallback() {
 
     if (token) {
       localStorage.setItem('token', token);
-      refreshUser().then(() => {
-        if (newUser) {
-          toast.success('Welcome to Ayesha Ahmad Atelier! Let\'s connect your Google Drive.');
-          navigate('/drive-setup');
-        } else {
-          toast.success('Welcome back!');
-          navigate('/dashboard');
-        }
-      });
+      refreshUser()
+        .then(() => {
+          if (needsOnboarding) {
+            navigate('/onboarding');
+          } else {
+            toast.success('Welcome back!');
+            navigate('/dashboard');
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch user after login:', err);
+          toast.error('Failed to load user data. Please try logging in again.');
+          localStorage.removeItem('token');
+          navigate('/login');
+        });
     } else {
       navigate('/login');
     }
-  }, []);
+  }, [navigate, refreshUser, searchParams]);
 
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#080808', flexDirection:'column', gap:16 }}>
-      <div className="spinner" style={{ width:48, height:48 }} />
-      <p style={{ color:'var(--text-muted)', fontFamily:'var(--font-body)', fontSize:'0.875rem' }}>Authenticating with Google…</p>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'var(--bg-void)', flexDirection:'column', gap:16 }}>
+      <div className="spinner" style={{ width:40, height:40 }} />
+      <p style={{ color:'var(--text-muted)', fontFamily:'var(--font-body)', fontSize:'0.82rem', letterSpacing:'0.05em' }}>Authenticating…</p>
     </div>
   );
 }
