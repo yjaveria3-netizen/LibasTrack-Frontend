@@ -117,9 +117,7 @@ export default function Login() {
             </p>
           </div>
 
-          <p style={{ marginTop:16, fontSize:'0.67rem', color:'var(--text-muted)', textAlign:'center', transition:'color 0.25s' }}>
-            Works for any fashion brand · Any currency · Any country
-          </p>
+         
         </div>
       </div>
     </div>
