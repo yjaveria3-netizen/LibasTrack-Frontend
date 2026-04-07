@@ -176,7 +176,7 @@ export default function Financial() {
                     <input className="form-input" value={form.orderId} onChange={e => set('orderId', e.target.value)} placeholder="ORD-0001" required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Amount *</label>
+                    <label className="form-label">Price *</label>
                     <input className="form-input" type="number" value={form.price} onChange={e => set('price', e.target.value)} placeholder="0" required min="0" />
                   </div>
                   <div className="form-group">
