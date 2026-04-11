@@ -108,7 +108,7 @@ export default function Orders() {
             <h1 className="page-title">Orders</h1>
             <p className="page-subtitle">
               {total} orders
-              {user?.driveConnected && <><span className="sync-dot" style={{ marginLeft:10 }} />Syncing</>}
+              {user?.storageType === 'google_drive' && user?.driveConnected && <><span className="sync-dot" style={{ marginLeft:10 }} />Syncing</>}
             </p>
           </div>
           <button className="btn btn-primary" onClick={openAdd}>+ New Order</button>

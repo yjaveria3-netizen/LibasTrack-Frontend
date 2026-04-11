@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
+import { Reveal, StaggerContainer, StaggerItem, MagneticButton, GlowCard, ease } from '../components/Motion';
 
 const SEGMENTS = ['VIP','Loyal','Regular','New','At Risk','Inactive'];
 const SOURCES = ['Instagram','Website','WhatsApp','Walk-in','Referral','Facebook','TikTok','Other'];
@@ -77,23 +79,29 @@ export default function Customers() {
     <div>
       <div className="page-header">
         <div className="page-header-inner">
-          <div>
-            <h1 className="page-title">Customers</h1>
-            <p className="page-subtitle">
-              {total} customers
-              {user?.driveConnected && <><span className="sync-dot" style={{ marginLeft:10 }} />Syncing</>}
-            </p>
-          </div>
-          <button className="btn btn-primary" onClick={openAdd}>+ Add Customer</button>
+          <Reveal delay={0.05} direction="none">
+            <div>
+              <h1 className="page-title">Customers</h1>
+              <p className="page-subtitle">
+                {total} customers
+                {user?.storageType === 'google_drive' && user?.driveConnected && <><motion.span className="sync-dot" style={{ marginLeft:10 }} animate={{ scale:[1,1.5,1],opacity:[1,0.4,1] }} transition={{ duration:2,repeat:Infinity }} />Syncing</>}
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.15} direction="left">
+            <MagneticButton className="btn btn-primary" onClick={openAdd}>+ Add Customer</MagneticButton>
+          </Reveal>
         </div>
       </div>
 
       <div className="page-body">
         {stats && (
-          <div className="stats-grid" style={{ gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))', marginBottom:20 }}>
-            <div className="stat-card"><div className="stat-label">Total Customers</div><div className="stat-value">{stats.total||0}</div></div>
-            <div className="stat-card"><div className="stat-label">New This Month</div><div className="stat-value" style={{ color:'var(--success)' }}>+{stats.thisMonth||0}</div></div>
-          </div>
+          <StaggerContainer staggerDelay={0.08} delayStart={0.05}>
+            <div className="stats-grid" style={{ gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))', marginBottom:20 }}>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Total Customers</div><div className="stat-value">{stats.total||0}</div></GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">New This Month</div><div className="stat-value" style={{ color:'var(--emerald)' }}>+{stats.thisMonth||0}</div></GlowCard></StaggerItem>
+            </div>
+          </StaggerContainer>
         )}
 
         {/* Segment filter pills */}
@@ -116,22 +124,32 @@ export default function Customers() {
           </div>
         </div>
 
-        <div className="card" style={{ padding:0, overflow:'hidden' }}>
-          <div className="table-container">
-            {loading ? <div className="page-loader"><div className="spinner" /></div> : customers.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">⊕</div>
-                <h3>No customers yet</h3>
-                <p>Start building your customer database</p>
-              </div>
-            ) : (
-              <table>
-                <thead>
-                  <tr><th>ID</th><th>Customer</th><th>Contact</th><th>Location</th><th>Segment</th><th>Source</th><th>Spent</th><th>Orders</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {customers.map(c => (
-                    <tr key={c._id}>
+        <Reveal delay={0.05}>
+          <div className="card" style={{ padding:0, overflow:'hidden' }}>
+            <div className="table-container">
+              {loading ? (
+                <div className="page-loader">
+                  <motion.div style={{ width:28,height:28,borderRadius:'50%',border:'2px solid var(--rose-soft)',borderTop:'2px solid var(--rose)' }} animate={{ rotate:360 }} transition={{ duration:0.8,repeat:Infinity,ease:'linear' }} />
+                </div>
+              ) : customers.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">⊕</div>
+                  <h3>No customers yet</h3>
+                  <p>Start building your customer database</p>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr><th>ID</th><th>Customer</th><th>Contact</th><th>Location</th><th>Segment</th><th>Source</th><th>Spent</th><th>Orders</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {customers.map((c, idx) => (
+                      <motion.tr
+                        key={c._id}
+                        initial={{ opacity:0, y:8 }}
+                        animate={{ opacity:1, y:0 }}
+                        transition={{ delay: idx * 0.04, duration:0.35, ease: ease.out }}
+                      >
                       <td><span className="id-chip">{c.customerId}</span></td>
                       <td>
                         <div className="cell-primary">{c.fullName}</div>
@@ -152,24 +170,25 @@ export default function Customers() {
                       <td style={{ textAlign:'center' }}>{c.totalOrders || 0}</td>
                       <td>
                         <div style={{ display:'flex', gap:5 }}>
-                          <button className="btn-icon btn-sm" onClick={() => openEdit(c)}>✎</button>
-                          <button className="btn-icon btn-sm" onClick={() => handleDelete(c._id)} style={{ color:'var(--error)' }}>✕</button>
+                          <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => openEdit(c)}>✎</motion.button>
+                          <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => handleDelete(c._id)} style={{ color:'var(--rose-deep)' }}>✕</motion.button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))}
                 </tbody>
               </table>
+              )}
+            </div>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <span className="page-info">Page {page} of {totalPages}</span>
+                <MagneticButton className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1} strength={0.3}>←</MagneticButton>
+                <MagneticButton className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages} strength={0.3}>→</MagneticButton>
+              </div>
             )}
           </div>
-          {totalPages > 1 && (
-            <div className="pagination">
-              <span className="page-info">Page {page} of {totalPages}</span>
-              <button className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1}>←</button>
-              <button className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages}>→</button>
-            </div>
-          )}
-        </div>
+        </Reveal>
       </div>
 
       {showModal && (

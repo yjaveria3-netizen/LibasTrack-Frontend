@@ -8,6 +8,7 @@ import './index.css';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import BrandOnboarding from './pages/BrandOnboarding';
+import StorageSetup from './pages/StorageSetup';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
@@ -20,7 +21,7 @@ import DriveSetup from './pages/DriveSetup';
 import BrandSettings from './pages/BrandSettings';
 import Layout from './components/Layout';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, skipStorageCheck = false }) => {
   const { user, loading } = useAuth();
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'var(--bg-base)' }}>
@@ -28,6 +29,10 @@ const ProtectedRoute = ({ children }) => {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
+  // Redirect to onboarding if brand not set up
+  if (!user.brand?.onboardingComplete) return <Navigate to="/onboarding" replace />;
+  // Redirect to storage setup if storage not yet chosen (skip this check on the setup page itself)
+  if (!skipStorageCheck && !user.storageType) return <Navigate to="/storage-setup" replace />;
   return children;
 };
 
@@ -62,22 +67,21 @@ const Stub = ({ title, icon = '▦' }) => (
 );
 
 function ToasterWithTheme() {
-  const { isDark } = useTheme();
   return (
     <Toaster
       position="bottom-right"
       toastOptions={{
         style: {
-          background: isDark ? '#18181E' : '#FFFFFF',
-          color: isDark ? '#F4F4F6' : '#1A1A20',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
-          fontFamily: "'Instrument Sans', system-ui, sans-serif",
-          fontSize: '0.8rem',
+          background: '#fff',
+          color: '#3D1A14',
+          border: '1px solid rgba(212,117,107,0.2)',
+          fontFamily: "'Outfit', system-ui, sans-serif",
+          fontSize: '0.85rem',
           borderRadius: '10px',
-          boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.1)',
+          boxShadow: '0 8px 32px rgba(212,117,107,0.18)',
         },
-        success: { iconTheme: { primary: '#34D399', secondary: isDark ? '#09090B' : '#FAFAF9' } },
-        error:   { iconTheme: { primary: '#FB7185', secondary: isDark ? '#09090B' : '#FAFAF9' } },
+        success: { iconTheme: { primary: '#4A8C68', secondary: '#fff' } },
+        error:   { iconTheme: { primary: '#C05A50', secondary: '#fff' } },
       }}
     />
   );
@@ -89,6 +93,10 @@ function AppRoutes() {
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/onboarding" element={<ProtectedRoute><BrandOnboarding /></ProtectedRoute>} />
+      <Route path="/storage-setup" element={
+        // Allow access only if logged in + onboarding done, but storage not yet chosen
+        <ProtectedRoute skipStorageCheck><StorageSetup /></ProtectedRoute>
+      } />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />

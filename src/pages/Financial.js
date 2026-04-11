@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion } from 'framer-motion';
+import { Reveal, StaggerContainer, StaggerItem, MagneticButton, GlowCard, ease } from '../components/Motion';
+
+const COLORS = ['#c9a96e', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#6366f1', '#64748b'];
 
 const PAYMENT_METHODS = ['Cash','Bank Transfer','EasyPaisa','JazzCash','Card','COD','Stripe','PayPal','Wise','Other'];
 const PAYMENT_STATUSES = ['Pending','Completed','Failed','Refunded'];
@@ -65,42 +70,66 @@ export default function Financial() {
     <div>
       <div className="page-header">
         <div className="page-header-inner">
-          <div>
-            <h1 className="page-title">Financial</h1>
-            <p className="page-subtitle">{total} transactions{user?.driveConnected && <><span className="sync-dot" style={{ marginLeft:10 }} />Syncing</>}</p>
-          </div>
-          <button className="btn btn-primary" onClick={openAdd}>+ Record Transaction</button>
+          <Reveal delay={0.05} direction="none">
+            <div>
+              <h1 className="page-title">Financial</h1>
+              <p className="page-subtitle">{total} transactions{user?.storageType === 'google_drive' && user?.driveConnected && <><motion.span className="sync-dot" style={{ marginLeft:10 }} animate={{ scale:[1,1.5,1],opacity:[1,0.4,1] }} transition={{ duration:2,repeat:Infinity }} />Syncing</>}</p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.15} direction="left">
+            <MagneticButton className="btn btn-primary" onClick={openAdd}>+ Record Transaction</MagneticButton>
+          </Reveal>
         </div>
       </div>
 
       <div className="page-body">
         {stats && (
-          <div className="stats-grid" style={{ marginBottom:20 }}>
-            <div className="stat-card">
-              <div className="stat-label">Revenue Collected</div>
-              <div className="stat-value" style={{ fontSize:'1.4rem', color:'var(--success)' }}>{formatCurrency(stats.completedRevenue)}</div>
+          <StaggerContainer staggerDelay={0.07} delayStart={0.05}>
+            <div className="stats-grid" style={{ marginBottom:20 }}>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Revenue Collected</div><div className="stat-value" style={{ fontSize:'1.5rem', color:'var(--emerald)' }}>{formatCurrency(stats.completedRevenue)}</div></GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Pending Payments</div><div className="stat-value" style={{ fontSize:'1.5rem', color:'var(--amber)' }}>{formatCurrency(stats.pendingRevenue)}</div></GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Total Transactions</div><div className="stat-value">{stats.total}</div></GlowCard></StaggerItem>
             </div>
-            <div className="stat-card">
-              <div className="stat-label">Pending Payments</div>
-              <div className="stat-value" style={{ fontSize:'1.4rem', color:'var(--warning)' }}>{formatCurrency(stats.pendingRevenue)}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Total Transactions</div>
-              <div className="stat-value">{stats.total}</div>
-            </div>
-          </div>
+          </StaggerContainer>
         )}
 
         {/* Method breakdown */}
         {stats?.byMethod?.length > 0 && (
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:20 }}>
-            {stats.byMethod.map(m => (
-              <div key={m._id} style={{ background:'var(--bg-surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'10px 14px', minWidth:120 }}>
-                <div style={{ fontSize:'0.6rem', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.12em', fontWeight:600, marginBottom:4 }}>{m._id}</div>
-                <div style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', color:'var(--cream)', letterSpacing:'0.04em' }}>{m.count}</div>
-                <div style={{ fontSize:'0.7rem', color:'var(--text-secondary)' }}>{formatCurrency(m.total)}</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16, marginBottom:20 }}>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignContent:'flex-start' }}>
+              {stats.byMethod.map(m => (
+                <div key={m._id} style={{ background:'var(--bg-surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'10px 14px', minWidth:120, flex:1 }}>
+                  <div style={{ fontSize:'0.6rem', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.12em', fontWeight:600, marginBottom:4 }}>{m._id}</div>
+                  <div style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', color:'var(--cream)', letterSpacing:'0.04em' }}>{m.count}</div>
+                  <div style={{ fontSize:'0.7rem', color:'var(--text-secondary)' }}>{formatCurrency(m.total)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="card" style={{ padding:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:'100%', height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.byMethod}
+                      dataKey="total"
+                      nameKey="_id"
+                      cx="50%" cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={5}
+                    >
+                      {stats.byMethod.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(val) => formatCurrency(val)}
+                      contentStyle={{ background: 'var(--bg-popover)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
+            </div>
           </div>
         )}
 
@@ -117,48 +146,59 @@ export default function Financial() {
           </div>
         </div>
 
-        <div className="card" style={{ padding:0, overflow:'hidden' }}>
-          <div className="table-container">
-            {loading ? <div className="page-loader"><div className="spinner" /></div> : transactions.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">$</div>
-                <h3>No transactions yet</h3>
-                <p>Record your first payment to start financial tracking</p>
+        <Reveal delay={0.05}>
+          <div className="card" style={{ padding:0, overflow:'hidden' }}>
+            <div className="table-container">
+              {loading ? (
+                <div className="page-loader">
+                  <motion.div style={{ width:28,height:28,borderRadius:'50%',border:'2px solid var(--rose-soft)',borderTop:'2px solid var(--rose)' }} animate={{ rotate:360 }} transition={{ duration:0.8,repeat:Infinity,ease:'linear' }} />
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">$</div>
+                  <h3>No transactions yet</h3>
+                  <p>Record your first payment to start financial tracking</p>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr><th>TXN ID</th><th>Order ID</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((t, idx) => (
+                      <motion.tr
+                        key={t._id}
+                        initial={{ opacity:0, y:8 }}
+                        animate={{ opacity:1, y:0 }}
+                        transition={{ delay: idx * 0.04, duration:0.35, ease: ease.out }}
+                      >
+                        <td><span className="id-chip">{t.transactionId}</span></td>
+                        <td><span className="id-chip">{t.orderId}</span></td>
+                        <td className="cell-primary">{formatCurrency(t.price)}</td>
+                        <td style={{ fontSize:'0.82rem' }}>{t.paymentMethod}</td>
+                        <td><span className={`badge badge-${t.paymentStatus.toLowerCase()}`}>{t.paymentStatus}</span></td>
+                        <td style={{ fontSize:'0.8rem' }}>{new Date(t.transactionDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                        <td>
+                          <div style={{ display:'flex', gap:5 }}>
+                            <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => openEdit(t)}>✎</motion.button>
+                            <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => handleDelete(t._id)} style={{ color:'var(--rose-deep)' }}>✕</motion.button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <span className="page-info">Page {page} of {totalPages}</span>
+                <MagneticButton className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1} strength={0.3}>←</MagneticButton>
+                <MagneticButton className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages} strength={0.3}>→</MagneticButton>
               </div>
-            ) : (
-              <table>
-                <thead>
-                  <tr><th>TXN ID</th><th>Order ID</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {transactions.map(t => (
-                    <tr key={t._id}>
-                      <td><span className="id-chip">{t.transactionId}</span></td>
-                      <td><span className="id-chip">{t.orderId}</span></td>
-                      <td className="cell-primary">{formatCurrency(t.price)}</td>
-                      <td style={{ fontSize:'0.78rem' }}>{t.paymentMethod}</td>
-                      <td><span className={`badge badge-${t.paymentStatus.toLowerCase()}`}>{t.paymentStatus}</span></td>
-                      <td style={{ fontSize:'0.75rem' }}>{new Date(t.transactionDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
-                      <td>
-                        <div style={{ display:'flex', gap:5 }}>
-                          <button className="btn-icon btn-sm" onClick={() => openEdit(t)}>✎</button>
-                          <button className="btn-icon btn-sm" onClick={() => handleDelete(t._id)} style={{ color:'var(--error)' }}>✕</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             )}
           </div>
-          {totalPages > 1 && (
-            <div className="pagination">
-              <span className="page-info">Page {page} of {totalPages}</span>
-              <button className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1}>←</button>
-              <button className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages}>→</button>
-            </div>
-          )}
-        </div>
+        </Reveal>
       </div>
 
       {showModal && (

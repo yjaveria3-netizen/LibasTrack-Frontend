@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Reveal, StaggerContainer, StaggerItem, MagneticButton, GlowCard, ease } from '../components/Motion';
 
 const CATEGORIES = ['Lawn','Chiffon','Silk','Linen','Cotton','Embroidered','Formal','Casual','Bridal','Pret','Luxury Pret','Co-ords','Kurta','Shalwar Kameez','Abayas','Other'];
 const SIZES = ['XS','S','M','L','XL','XXL','XXXL','Custom','Free Size','6','8','10','12','14','16'];
@@ -99,25 +101,31 @@ export default function Products() {
     <div>
       <div className="page-header">
         <div className="page-header-inner">
-          <div>
-            <h1 className="page-title">Products</h1>
-            <p className="page-subtitle">
-              {total} products
-              {user?.driveConnected && <><span className="sync-dot" style={{ marginLeft:10 }} />Syncing to Sheets</>}
-            </p>
-          </div>
-          <button className="btn btn-primary" onClick={openAdd}>+ Add Product</button>
+          <Reveal delay={0.05} direction="none">
+            <div>
+              <h1 className="page-title">Products</h1>
+              <p className="page-subtitle">
+                {total} products
+                {user?.storageType === 'google_drive' && user?.driveConnected && <><motion.span className="sync-dot" style={{ marginLeft:10 }} animate={{ scale:[1,1.5,1], opacity:[1,0.4,1] }} transition={{ duration:2, repeat:Infinity }} />Syncing to Sheets</>}
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.15} direction="left">
+            <MagneticButton className="btn btn-primary" onClick={openAdd}>+ Add Product</MagneticButton>
+          </Reveal>
         </div>
       </div>
 
       <div className="page-body">
         {stats && (
-          <div className="stats-grid" style={{ gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', marginBottom:20 }}>
-            <div className="stat-card"><div className="stat-label">Total Products</div><div className="stat-value">{stats.total || 0}</div></div>
-            <div className="stat-card"><div className="stat-label">Low Stock</div><div className="stat-value" style={{ color:'var(--warning)' }}>{stats.lowStock || 0}</div></div>
-            <div className="stat-card"><div className="stat-label">Categories</div><div className="stat-value">{stats.categories || 0}</div></div>
-            <div className="stat-card"><div className="stat-label">Inventory Value</div><div className="stat-value" style={{ fontSize:'1.3rem' }}>{formatCurrency(stats.totalValue)}</div></div>
-          </div>
+          <StaggerContainer staggerDelay={0.07} delayStart={0.05}>
+            <div className="stats-grid" style={{ gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', marginBottom:20 }}>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Total Products</div><div className="stat-value">{stats.total || 0}</div></GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Low Stock</div><div className="stat-value" style={{ color:'var(--amber)' }}>{stats.lowStock || 0}</div></GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Categories</div><div className="stat-value">{stats.categories || 0}</div></GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Inventory Value</div><div className="stat-value" style={{ fontSize:'1.5rem' }}>{formatCurrency(stats.totalValue)}</div></GlowCard></StaggerItem>
+            </div>
+          </StaggerContainer>
         )}
 
         <div className="table-toolbar">
@@ -137,22 +145,32 @@ export default function Products() {
           </div>
         </div>
 
-        <div className="card" style={{ padding:0, overflow:'hidden' }}>
-          <div className="table-container">
-            {loading ? <div className="page-loader"><div className="spinner" /></div> : products.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">▣</div>
-                <h3>No products yet</h3>
-                <p>Add your first product to start tracking inventory</p>
-              </div>
-            ) : (
+        <Reveal delay={0.05}>
+          <div className="card" style={{ padding:0, overflow:'hidden' }}>
+            <div className="table-container">
+              {loading ? (
+                <div className="page-loader">
+                  <motion.div style={{ width:28,height:28,borderRadius:'50%',border:'2px solid var(--rose-soft)',borderTop:'2px solid var(--rose)' }} animate={{ rotate:360 }} transition={{ duration:0.8,repeat:Infinity,ease:'linear' }} />
+                </div>
+              ) : products.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">▣</div>
+                  <h3>No products yet</h3>
+                  <p>Add your first product to start tracking inventory</p>
+                </div>
+              ) : (
               <table>
                 <thead>
                   <tr><th>Image</th><th>Product</th><th>Category</th><th>Season</th><th>Price</th><th>Margin</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
-                  {products.map(p => (
-                    <tr key={p._id}>
+                  {products.map((p, idx) => (
+                    <motion.tr
+                      key={p._id}
+                      initial={{ opacity:0, y:8 }}
+                      animate={{ opacity:1, y:0 }}
+                      transition={{ delay: idx * 0.035, duration:0.35, ease: ease.out }}
+                    >
                       <td>
                         {p.imageThumbnailUrl || p.imageViewUrl ? (
                           <a href={p.imageViewUrl} target="_blank" rel="noreferrer">
@@ -192,24 +210,25 @@ export default function Products() {
                       <td><span className={`badge badge-${(p.status||'active').toLowerCase().replace(' ','-')}`}>{p.status || 'Active'}</span></td>
                       <td>
                         <div style={{ display:'flex', gap:5 }}>
-                          <button className="btn-icon btn-sm" onClick={() => openEdit(p)}>✎</button>
-                          <button className="btn-icon btn-sm" onClick={() => handleDelete(p._id)} style={{ color:'var(--error)' }}>✕</button>
+                          <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => openEdit(p)}>✎</motion.button>
+                          <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => handleDelete(p._id)} style={{ color:'var(--rose-deep)' }}>✕</motion.button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))}
                 </tbody>
               </table>
+              )}
+            </div>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <span className="page-info">Page {page} of {totalPages}</span>
+                <MagneticButton className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1} strength={0.3}>←</MagneticButton>
+                <MagneticButton className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages} strength={0.3}>→</MagneticButton>
+              </div>
             )}
           </div>
-          {totalPages > 1 && (
-            <div className="pagination">
-              <span className="page-info">Page {page} of {totalPages}</span>
-              <button className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1}>←</button>
-              <button className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages}>→</button>
-            </div>
-          )}
-        </div>
+        </Reveal>
       </div>
 
       {showModal && (
@@ -236,7 +255,7 @@ export default function Products() {
                           <div style={{ fontSize:'1.5rem', marginBottom:8, opacity:0.3 }}>▣</div>
                           <div style={{ fontSize:'0.8rem', color:'var(--text-secondary)' }}>Click to upload or drag & drop</div>
                           <div style={{ fontSize:'0.68rem', color:'var(--text-muted)', marginTop:4 }}>JPEG, PNG, WEBP — max 10MB</div>
-                          {user?.driveConnected && <div style={{ fontSize:'0.68rem', color:'var(--teal)', marginTop:6 }}>Image saves to Google Drive</div>}
+                          {user?.storageType === 'google_drive' && user?.driveConnected && <div style={{ fontSize:'0.68rem', color:'var(--teal)', marginTop:6 }}>Image saves to Google Drive</div>}
                         </div>}
                   </div>
                   <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => handleImageChange(e.target.files[0])} />

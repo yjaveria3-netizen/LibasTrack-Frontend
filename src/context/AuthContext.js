@@ -34,6 +34,8 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = () => fetchUser();
 
   const currency = user?.brand?.currency || 'PKR';
+  const storageType = user?.storageType || null;
+  const localPath   = user?.localPath   || null;
 
   const formatCurrency = (n) => {
     const num = Number(n || 0);
@@ -43,7 +45,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, refreshUser, setUser, currency, formatCurrency }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, refreshUser, setUser, currency, storageType, localPath, formatCurrency }}>
       {children}
     </AuthContext.Provider>
   );
