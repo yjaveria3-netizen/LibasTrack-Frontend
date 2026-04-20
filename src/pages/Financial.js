@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import { Reveal, StaggerContainer, StaggerItem, MagneticButton, GlowCard, ease } from '../components/Motion';
 
-const COLORS = ['#c9a96e', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#6366f1', '#64748b'];
+const COLORS = ['#A78BFA', '#8B5CF6', '#7C3AED', '#6D28D9', '#5B21B6', '#4C1D95', '#2E1065'];
 
 const PAYMENT_METHODS = ['Cash','Bank Transfer','EasyPaisa','JazzCash','Card','COD','Stripe','PayPal','Wise','Other'];
 const PAYMENT_STATUSES = ['Pending','Completed','Failed','Refunded'];
@@ -67,46 +67,63 @@ export default function Financial() {
   };
 
   return (
-    <div>
+    <div className="financial-page animate-vibe">
       <div className="page-header">
         <div className="page-header-inner">
           <Reveal delay={0.05} direction="none">
             <div>
-              <h1 className="page-title">Financial</h1>
-              <p className="page-subtitle">{total} transactions{user?.storageType === 'google_drive' && user?.driveConnected && <><motion.span className="sync-dot" style={{ marginLeft:10 }} animate={{ scale:[1,1.5,1],opacity:[1,0.4,1] }} transition={{ duration:2,repeat:Infinity }} />Syncing</>}</p>
+              <h1 className="page-title" style={{ fontFamily: 'var(--font-display)', fontWeight: 800 }}>Accounts</h1>
+              <p className="page-subtitle" style={{ color: 'var(--text-muted)' }}>
+                {total} recorded movements in your balance
+                {user?.storageType === 'google_drive' && user?.driveConnected && (
+                    <span className="sync-status-indicator" style={{ color: 'var(--accent)' }}>
+                      <motion.span className="sync-dot active" style={{ background: 'var(--accent)' }} animate={{ scale:[1,1.5,1], opacity:[0.8,0.3,0.8] }} transition={{ duration:2, repeat:Infinity }} />
+                      Vault Secured
+                    </span>
+                )}
+              </p>
             </div>
           </Reveal>
           <Reveal delay={0.15} direction="left">
-            <MagneticButton className="btn btn-primary" onClick={openAdd}>+ Record Transaction</MagneticButton>
+            <MagneticButton className="btn" onClick={openAdd} style={{ background: 'var(--accent)', color: 'white', fontWeight: 700 }}>+ Record Cashflow</MagneticButton>
           </Reveal>
         </div>
       </div>
 
       <div className="page-body">
         {stats && (
-          <StaggerContainer staggerDelay={0.07} delayStart={0.05}>
-            <div className="stats-grid" style={{ marginBottom:20 }}>
-              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Revenue Collected</div><div className="stat-value" style={{ fontSize:'1.5rem', color:'var(--emerald)' }}>{formatCurrency(stats.completedRevenue)}</div></GlowCard></StaggerItem>
-              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Pending Payments</div><div className="stat-value" style={{ fontSize:'1.5rem', color:'var(--amber)' }}>{formatCurrency(stats.pendingRevenue)}</div></GlowCard></StaggerItem>
-              <StaggerItem><GlowCard className="stat-card"><div className="stat-label">Total Transactions</div><div className="stat-value">{stats.total}</div></GlowCard></StaggerItem>
+          <StaggerContainer staggerDelay={0.06} delayStart={0.1}>
+            <div className="stats-grid">
+              <StaggerItem><GlowCard className="stat-card glass hover-glow" style={{ border: '1px solid var(--accent-soft)' }}>
+                <div className="stat-label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>Realized Revenue</div>
+                <div className="stat-value" style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 800, color: '#34D399' }}>{formatCurrency(stats.completedRevenue)}</div>
+              </GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card glass hover-glow" style={{ border: '1px solid var(--accent-soft)' }}>
+                <div className="stat-label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>Receivables</div>
+                <div className="stat-value" style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 800, color: '#FBBF24' }}>{formatCurrency(stats.pendingRevenue)}</div>
+              </GlowCard></StaggerItem>
+              <StaggerItem><GlowCard className="stat-card glass hover-glow" style={{ border: '1px solid var(--accent-soft)' }}>
+                <div className="stat-label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>Total Volume</div>
+                <div className="stat-value" style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 800 }}>{stats.total}</div>
+              </GlowCard></StaggerItem>
             </div>
           </StaggerContainer>
         )}
 
-        {/* Method breakdown */}
+        {/* Analytics Section */}
         {stats?.byMethod?.length > 0 && (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16, marginBottom:20 }}>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignContent:'flex-start' }}>
+          <div className="financial-analytics-grid" style={{ marginTop: 32 }}>
+            <div className="method-cards">
               {stats.byMethod.map(m => (
-                <div key={m._id} style={{ background:'var(--bg-surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'10px 14px', minWidth:120, flex:1 }}>
-                  <div style={{ fontSize:'0.6rem', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.12em', fontWeight:600, marginBottom:4 }}>{m._id}</div>
-                  <div style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', color:'var(--cream)', letterSpacing:'0.04em' }}>{m.count}</div>
-                  <div style={{ fontSize:'0.7rem', color:'var(--text-secondary)' }}>{formatCurrency(m.total)}</div>
+                <div key={m._id} className="card method-stat-box glass" style={{ border: '1px solid var(--accent-soft)' }}>
+                  <div className="label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.1em' }}>{m._id}</div>
+                  <div className="val" style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>{m.count} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>Txns</span></div>
+                  <div className="amount cell-primary" style={{ color: 'var(--accent)', fontWeight: 800 }}>{formatCurrency(m.total)}</div>
                 </div>
               ))}
             </div>
-            <div className="card" style={{ padding:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height: 180 }}>
+            <div className="card glass chart-card-mini" style={{ border: '1px solid var(--accent-soft)' }}>
+              <div className="chart-container-mini">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -115,8 +132,9 @@ export default function Financial() {
                       nameKey="_id"
                       cx="50%" cy="50%"
                       innerRadius={50}
-                      outerRadius={70}
+                      outerRadius={75}
                       paddingAngle={5}
+                      stroke="none"
                     >
                       {stats.byMethod.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -124,7 +142,7 @@ export default function Financial() {
                     </Pie>
                     <Tooltip 
                       formatter={(val) => formatCurrency(val)}
-                      contentStyle={{ background: 'var(--bg-popover)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                      contentStyle={{ background: 'var(--bg-popover)', border: '1px solid var(--accent-soft)', borderRadius: '12px', color: 'white', boxShadow: 'var(--shadow-lg)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -133,55 +151,56 @@ export default function Financial() {
           </div>
         )}
 
-        <div className="table-toolbar">
-          <div style={{ display:'flex', gap:10, flex:1, flexWrap:'wrap' }}>
-            <div className="search-input-wrapper">
-              <span className="search-icon">⌕</span>
-              <input className="form-input search-input" placeholder="Search by Transaction or Order ID…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        <div className="table-toolbar" style={{ marginTop: 32 }}>
+           <div className="filter-group">
+            <div className="search-input-wrapper glass" style={{ border: '1px solid var(--accent-soft)' }}>
+              <span className="search-icon" style={{ color: 'var(--accent)' }}>⌕</span>
+              <input className="form-input search-input" style={{ background: 'transparent', border: 'none' }} placeholder="Search Reference, Order ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
             </div>
-            <select className="form-select" style={{ width:'auto' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
-              <option value="">All Statuses</option>
+            <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
+              <option value="">Status: All Payments</option>
               {PAYMENT_STATUSES.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
         </div>
 
         <Reveal delay={0.05}>
-          <div className="card" style={{ padding:0, overflow:'hidden' }}>
+          <div className="card glass overflow-hidden" style={{ border: '1px solid var(--accent-soft)', marginTop: 24 }}>
             <div className="table-container">
               {loading ? (
-                <div className="page-loader">
-                  <motion.div style={{ width:28,height:28,borderRadius:'50%',border:'2px solid var(--rose-soft)',borderTop:'2px solid var(--rose)' }} animate={{ rotate:360 }} transition={{ duration:0.8,repeat:Infinity,ease:'linear' }} />
-                </div>
+                <div className="page-loader"><div className="spinner" /></div>
               ) : transactions.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-state-icon">$</div>
-                  <h3>No transactions yet</h3>
-                  <p>Record your first payment to start financial tracking</p>
+                  <div className="empty-state-icon" style={{ color: 'var(--accent)' }}>$</div>
+                  <h3 style={{ fontFamily: 'var(--font-display)' }}>No transactions recorded</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>Maintain your atelier's cashflow by adding payments here.</p>
                 </div>
               ) : (
                 <table>
                   <thead>
-                    <tr><th>TXN ID</th><th>Order ID</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+                    <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      <th>Identity</th><th>Reference</th><th>Value</th><th>Method</th><th>Process Status</th><th>Date</th><th>Actions</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {transactions.map((t, idx) => (
-                      <motion.tr
-                        key={t._id}
-                        initial={{ opacity:0, y:8 }}
-                        animate={{ opacity:1, y:0 }}
-                        transition={{ delay: idx * 0.04, duration:0.35, ease: ease.out }}
+                      <motion.tr 
+                        key={t._id} 
+                        initial={{ opacity:0, y:8 }} 
+                        animate={{ opacity:1, y:0 }} 
+                        transition={{ delay: idx * 0.03, duration:0.4 }}
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                       >
-                        <td><span className="id-chip">{t.transactionId}</span></td>
-                        <td><span className="id-chip">{t.orderId}</span></td>
-                        <td className="cell-primary">{formatCurrency(t.price)}</td>
-                        <td style={{ fontSize:'0.82rem' }}>{t.paymentMethod}</td>
-                        <td><span className={`badge badge-${t.paymentStatus.toLowerCase()}`}>{t.paymentStatus}</span></td>
-                        <td style={{ fontSize:'0.8rem' }}>{new Date(t.transactionDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                        <td><span className="id-chip" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>{t.transactionId}</span></td>
+                        <td><span className="id-chip" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>{t.orderId}</span></td>
+                        <td className="cell-primary" style={{ fontWeight: 800 }}>{formatCurrency(t.price)}</td>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600 }}>{t.paymentMethod}</td>
+                        <td><span className={`badge badge-${t.paymentStatus.toLowerCase()}`} style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>{t.paymentStatus}</span></td>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(t.transactionDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
                         <td>
-                          <div style={{ display:'flex', gap:5 }}>
-                            <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => openEdit(t)}>✎</motion.button>
-                            <motion.button whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }} className="btn-icon btn-sm" onClick={() => handleDelete(t._id)} style={{ color:'var(--rose-deep)' }}>✕</motion.button>
+                          <div className="action-btns">
+                            <button className="btn-icon-sm" onClick={() => openEdit(t)} style={{ color: 'var(--accent)' }}>✎</button>
+                            <button className="btn-icon-sm" onClick={() => handleDelete(t._id)} style={{ color: '#F87171' }}>✕</button>
                           </div>
                         </td>
                       </motion.tr>
@@ -191,10 +210,10 @@ export default function Financial() {
               )}
             </div>
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="pagination" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
                 <span className="page-info">Page {page} of {totalPages}</span>
-                <MagneticButton className="page-btn" onClick={() => setPage(p => p-1)} disabled={page===1} strength={0.3}>←</MagneticButton>
-                <MagneticButton className="page-btn" onClick={() => setPage(p => p+1)} disabled={page===totalPages} strength={0.3}>→</MagneticButton>
+                <button className="page-btn glass" onClick={() => setPage(p => p-1)} disabled={page===1}>←</button>
+                <button className="page-btn glass" onClick={() => setPage(p => p+1)} disabled={page===totalPages}>→</button>
               </div>
             )}
           </div>
@@ -203,42 +222,42 @@ export default function Financial() {
 
       {showModal && (
         <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setShowModal(false)}>
-          <div className="modal">
+          <div className="modal glass sm animate-vibe" style={{ border: '1px solid var(--accent-border)' }}>
             <div className="modal-header">
-              <h2 className="modal-title">{editing ? 'Edit Transaction' : 'Record Transaction'}</h2>
+              <h2 className="modal-title" style={{ fontFamily: 'var(--font-display)', fontWeight: 800 }}>{editing ? 'Optimize Transaction' : 'Record New Entry'}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleSave}>
-                <div className="form-grid">
+                <div className="form-grid-1">
                   <div className="form-group">
-                    <label className="form-label">Order ID *</label>
-                    <input className="form-input" value={form.orderId} onChange={e => set('orderId', e.target.value)} placeholder="ORD-0001" required />
+                    <label className="form-label">Reference (Order ID) *</label>
+                    <input className="form-input glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.orderId} onChange={e => set('orderId', e.target.value)} placeholder="ORD-XXXX" required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Amount *</label>
-                    <input className="form-input" type="number" value={form.price} onChange={e => set('price', e.target.value)} placeholder="0" required min="0" />
+                    <label className="form-label">Total Value *</label>
+                    <input className="form-input glass" style={{ border: '1px solid var(--accent-soft)' }} type="number" value={form.price} onChange={e => set('price', e.target.value)} placeholder="0" required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Payment Method *</label>
-                    <select className="form-select" value={form.paymentMethod} onChange={e => set('paymentMethod', e.target.value)}>
+                    <label className="form-label">Liquid Method</label>
+                    <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.paymentMethod} onChange={e => set('paymentMethod', e.target.value)}>
                       {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Status</label>
-                    <select className="form-select" value={form.paymentStatus} onChange={e => set('paymentStatus', e.target.value)}>
+                    <label className="form-label">Current Status</label>
+                    <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.paymentStatus} onChange={e => set('paymentStatus', e.target.value)}>
                       {PAYMENT_STATUSES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Transaction Date</label>
-                    <input className="form-input" type="date" value={form.transactionDate} onChange={e => set('transactionDate', e.target.value)} />
+                    <label className="form-label">Identity Date</label>
+                    <input className="form-input glass" style={{ border: '1px solid var(--accent-soft)' }} type="date" value={form.transactionDate} onChange={e => set('transactionDate', e.target.value)} />
                   </div>
                 </div>
-                <div className="form-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : editing ? 'Update' : 'Record'}</button>
+                <div className="form-actions" style={{ marginTop:24 }}>
+                  <button type="button" className="btn btn-secondary glass" onClick={() => setShowModal(false)}>Cancel</button>
+                  <button type="submit" className="btn" style={{ background: 'var(--accent)', color: 'white', fontWeight: 700 }} disabled={saving}>{saving ? 'Syncing...' : 'Finalize Entry'}</button>
                 </div>
               </form>
             </div>
@@ -246,5 +265,6 @@ export default function Financial() {
         </div>
       )}
     </div>
+
   );
 }

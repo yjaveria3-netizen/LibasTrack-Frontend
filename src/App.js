@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
-import './index.css';
+import { ThemeProvider } from './context/ThemeContext';
 
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import BrandOnboarding from './pages/BrandOnboarding';
@@ -17,101 +17,109 @@ import Financial from './pages/Financial';
 import Suppliers from './pages/Suppliers';
 import Returns from './pages/Returns';
 import Checklist from './pages/Checklist';
+import Collection from './pages/Collection';
 import DriveSetup from './pages/DriveSetup';
 import BrandSettings from './pages/BrandSettings';
 import Layout from './components/Layout';
 
+// ── Route Guards ──────────────────────────────────────
 const ProtectedRoute = ({ children, skipStorageCheck = false }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'var(--bg-base)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-base)' }}>
       <div className="spinner" />
     </div>
   );
-  if (!user) return <Navigate to="/login" replace />;
-  // Redirect to onboarding if brand not set up
-  if (!user.brand?.onboardingComplete) return <Navigate to="/onboarding" replace />;
-  // Redirect to storage setup if storage not yet chosen (skip this check on the setup page itself)
-  if (!skipStorageCheck && !user.storageType) return <Navigate to="/storage-setup" replace />;
+
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+
+  if (!user.brand?.onboardingComplete && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (!skipStorageCheck && !user.storageType && location.pathname !== '/storage-setup') {
+    // Only redirect to storage-setup if onboarding IS complete
+    if (user.brand?.onboardingComplete) {
+      return <Navigate to="/storage-setup" replace />;
+    }
+  }
+
   return children;
 };
 
+// Public-only: redirect authenticated users to dashboard
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-base)' }}>
+      <div className="spinner" />
+    </div>
+  );
   if (user) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
-/* Stub for unbuilt pages */
-const Stub = ({ title, icon = '▦' }) => (
-  <div>
-    <div className="page-header">
-      <div className="page-header-inner">
-        <div>
-          <h1 className="page-title">{title}</h1>
-          <p className="page-subtitle">Coming soon</p>
-        </div>
-      </div>
-    </div>
-    <div className="page-body">
-      <div className="card">
-        <div className="empty-state">
-          <div className="empty-ico">{icon}</div>
-          <h3>{title}</h3>
-          <p>This module is being built. Check back soon.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+// Catch-all: smart redirect based on auth state
+const CatchAll = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Navigate to={user ? '/dashboard' : '/'} replace />;
+};
 
+// ── Toaster ───────────────────────────────────────────
 function ToasterWithTheme() {
   return (
     <Toaster
       position="bottom-right"
       toastOptions={{
         style: {
-          background: '#fff',
-          color: '#3D1A14',
-          border: '1px solid rgba(212,117,107,0.2)',
-          fontFamily: "'Outfit', system-ui, sans-serif",
+          background: 'var(--bg-layer1)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--accent-border)',
+          fontFamily: "var(--font-body)",
           fontSize: '0.85rem',
-          borderRadius: '10px',
-          boxShadow: '0 8px 32px rgba(212,117,107,0.18)',
+          borderRadius: '12px',
+          boxShadow: 'var(--sha-md)',
         },
-        success: { iconTheme: { primary: '#4A8C68', secondary: '#fff' } },
-        error:   { iconTheme: { primary: '#C05A50', secondary: '#fff' } },
+        success: { iconTheme: { primary: '#34D399', secondary: 'white' } },
+        error: { iconTheme: { primary: 'var(--accent)', secondary: 'white' } },
       }}
     />
   );
 }
 
+// ── Routes ────────────────────────────────────────────
 function AppRoutes() {
   return (
     <Routes>
+      {/* ── Public / Unauthenticated ── */}
+      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/onboarding" element={<ProtectedRoute><BrandOnboarding /></ProtectedRoute>} />
-      <Route path="/storage-setup" element={
-        // Allow access only if logged in + onboarding done, but storage not yet chosen
-        <ProtectedRoute skipStorageCheck><StorageSetup /></ProtectedRoute>
-      } />
-      <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="products" element={<Products />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="financial" element={<Financial />} />
-        <Route path="suppliers" element={<Suppliers />} />
-        <Route path="returns" element={<Returns />} />
-        <Route path="checklist" element={<Checklist />} />
-        <Route path="collections" element={<Stub title="Collections" icon="▤" />} />
-        <Route path="drive-setup" element={<DriveSetup />} />
-        <Route path="brand-settings" element={<BrandSettings />} />
+
+      {/* ── Setup Flow (requires auth, skips full protection) ── */}
+      <Route path="/onboarding" element={<ProtectedRoute skipStorageCheck><BrandOnboarding /></ProtectedRoute>} />
+      <Route path="/storage-setup" element={<ProtectedRoute skipStorageCheck><StorageSetup /></ProtectedRoute>} />
+
+      {/* ── Protected App Shell ── */}
+      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/financial" element={<Financial />} />
+        <Route path="/suppliers" element={<Suppliers />} />
+        <Route path="/returns" element={<Returns />} />
+        <Route path="/checklist" element={<Checklist />} />
+        <Route path="/collections" element={<Collection />} />
+        <Route path="/drive-setup" element={<DriveSetup />} />
+        <Route path="/brand-settings" element={<BrandSettings />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+      {/* ── Catch-All ── */}
+      <Route path="*" element={<CatchAll />} />
     </Routes>
   );
 }

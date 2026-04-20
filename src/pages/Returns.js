@@ -2,14 +2,27 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
+import { Reveal, StaggerContainer, StaggerItem, MagneticButton, GlowCard, ease } from '../components/Motion';
 
 const REASONS = ['Wrong Size','Wrong Item','Defective/Damaged','Not as Described','Changed Mind','Duplicate Order','Late Delivery','Quality Issue','Other'];
 const TYPES = ['Refund','Exchange','Store Credit'];
 const STATUSES = ['Requested','Approved','Item Received','Inspected','Refund Issued','Exchange Dispatched','Completed','Rejected'];
 const EMPTY = { orderId:'', customerId:'', reason:'Defective/Damaged', type:'Refund', status:'Requested', refundAmount:'', notes:'' };
 
+const STATUS_CLASSES = {
+  'Requested': 'badge-pending',
+  'Approved': 'badge-active',
+  'Item Received': 'badge-active',
+  'Inspected': 'badge-rose',
+  'Refund Issued': 'badge-success',
+  'Exchange Dispatched': 'badge-success',
+  'Completed': 'badge-success',
+  'Rejected': 'badge-archived',
+};
+
 export default function Returns() {
-  const { user } = useAuth();
+  const { user, formatCurrency } = useAuth();
   const [returns, setReturns] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -54,7 +67,7 @@ export default function Returns() {
   useEffect(() => {
     fetchReturns();
     fetchStats();
-  }, [fetchReturns]);
+  }, [fetchReturns, fetchStats]);
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
   const openEdit = (r) => { setEditing(r); setForm({ orderId:r.orderId, customerId:r.customerId, reason:r.reason, type:r.type, status:r.status, refundAmount:r.refundAmount, notes:r.notes }); setShowModal(true); };
@@ -92,160 +105,169 @@ export default function Returns() {
     }
   };
 
-  const badgeClass = (status) => {
-    const base = 'badge badge-';
-    if (status === 'Completed' || status === 'Refund Issued') return base + 'success';
-    if (status === 'Rejected') return base + 'error';
-    if (status === 'Approved' || status === 'Item Received') return base + 'info';
-    return base + 'neutral';
-  };
-
   return (
-    <div>
+    <div className="returns-page animate-vibe">
       <div className="page-header">
-        <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-          <div>
-            <h1 className="page-title">Returns & Refunds</h1>
-            <p className="page-subtitle">{total} returns total</p>
-          </div>
-          <button className="btn btn-primary" onClick={openAdd}>+ New Return</button>
+        <div className="page-header-inner">
+          <Reveal delay={0.05} direction="none">
+            <div>
+              <h1 className="page-title" style={{ fontFamily: 'var(--font-display)', fontWeight: 800 }}>Returns</h1>
+              <p className="page-subtitle" style={{ color: 'var(--text-muted)' }}>{total} cases requiring attention</p>
+            </div>
+          </Reveal>
+          <Reveal delay={0.15} direction="left">
+            <MagneticButton className="btn" onClick={openAdd} style={{ background: 'var(--accent)', color: 'white', fontWeight: 700 }}>+ Log Return</MagneticButton>
+          </Reveal>
         </div>
       </div>
 
-      {stats && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12, marginBottom:20 }}>
-          <div className="card" style={{ padding:16 }}>
-            <div style={{ fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:4 }}>Total Returns</div>
-            <div style={{ fontSize:'1.8rem', fontWeight:600, color:'var(--text-primary)' }}>{stats.total}</div>
-          </div>
-          <div className="card" style={{ padding:16 }}>
-            <div style={{ fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:4 }}>Pending</div>
-            <div style={{ fontSize:'1.8rem', fontWeight:600, color:'#ff9800' }}>{stats.pending}</div>
-          </div>
-          <div className="card" style={{ padding:16 }}>
-            <div style={{ fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:4 }}>Completed</div>
-            <div style={{ fontSize:'1.8rem', fontWeight:600, color:'#4caf50' }}>{stats.completed}</div>
-          </div>
-          <div className="card" style={{ padding:16 }}>
-            <div style={{ fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:4 }}>Total Refunded</div>
-            <div style={{ fontSize:'1.8rem', fontWeight:600, color:'#2196f3' }}>PKR {Number(stats.totalRefunded || 0).toLocaleString()}</div>
-          </div>
-        </div>
-      )}
-
       <div className="page-body">
-        <div className="table-toolbar">
-          <div style={{ display:'flex', gap:10, flex:1, flexWrap:'wrap' }}>
-            <div className="search-input-wrapper">
-              <span className="search-icon">⌕</span>
-              <input className="form-input search-input" placeholder="Search by Return ID, Order ID, or Customer…" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} />
+        {stats && (
+          <StaggerContainer staggerDelay={0.06} delayStart={0.1}>
+            <div className="stats-grid">
+               <StaggerItem><GlowCard className="stat-card glass hover-glow" style={{ border: '1px solid var(--accent-soft)' }}>
+                 <div className="stat-label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>Total Volume</div>
+                 <div className="stat-value" style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800 }}>{stats.total}</div>
+               </GlowCard></StaggerItem>
+               <StaggerItem><GlowCard className="stat-card glass hover-glow" style={{ border: '1px solid var(--accent-soft)' }}>
+                 <div className="stat-label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>Awaiting Resolution</div>
+                 <div className="stat-value" style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800, color: '#FBBF24' }}>{stats.pending}</div>
+               </GlowCard></StaggerItem>
+               <StaggerItem><GlowCard className="stat-card glass hover-glow" style={{ border: '1px solid var(--accent-soft)' }}>
+                 <div className="stat-label" style={{ color: 'var(--text-muted)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>Adjusted Value</div>
+                 <div className="stat-value" style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 800, color: '#F87171' }}>{formatCurrency(stats.totalRefunded || 0)}</div>
+               </GlowCard></StaggerItem>
             </div>
-            <select className="form-select" style={{ width:'auto' }} value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1);}}>
-              <option value="">All Status</option>
+          </StaggerContainer>
+        )}
+
+        <div className="table-toolbar" style={{ marginTop: 32 }}>
+          <div className="filter-group">
+            <div className="search-input-wrapper glass" style={{ border: '1px solid var(--accent-soft)' }}>
+              <span className="search-icon" style={{ color: 'var(--accent)' }}>⌕</span>
+              <input className="form-input search-input" style={{ background: 'transparent', border: 'none' }} placeholder="Search Reference, Order ID..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} />
+            </div>
+            <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1);}}>
+              <option value="">Status: All Phases</option>
               {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <select className="form-select" style={{ width:'auto' }} value={typeFilter} onChange={e=>{setTypeFilter(e.target.value);setPage(1);}}>
-              <option value="">All Types</option>
-              {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
           </div>
         </div>
 
-        <div className="card" style={{ padding:0 }}>
-          <div className="table-container">
-            {loading ? (
-              <div className="page-loader"><div className="spinner" /></div>
-            ) : returns.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">↩</div>
-                <h3>No returns yet</h3>
-                <p>Track your returns and refunds here</p>
-              </div>
-            ) : (
-              <table>
-                <thead>
-                  <tr><th>Return ID</th><th>Order ID</th><th>Customer</th><th>Reason</th><th>Type</th><th>Status</th><th>Refund (PKR)</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {returns.map(r => (
-                    <tr key={r._id}>
-                      <td><code style={{ fontSize:'0.78rem', color:'var(--gold)', background:'rgba(201,169,110,0.08)', padding:'2px 6px', borderRadius:4 }}>{r.returnId}</code></td>
-                      <td>{r.orderId}</td>
-                      <td>{r.customerName || r.customerId}</td>
-                      <td style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.reason}</td>
-                      <td><span className={`badge badge-${r.type.toLowerCase()}`}>{r.type}</span></td>
-                      <td><span className={badgeClass(r.status)}>{r.status}</span></td>
-                      <td className="cell-primary">PKR {Number(r.refundAmount).toLocaleString()}</td>
-                      <td>
-                        <div style={{ display:'flex', gap:6 }}>
-                          <button className="btn-icon btn-sm" onClick={()=>openEdit(r)}>✎</button>
-                          <button className="btn-icon btn-sm" onClick={()=>handleDelete(r._id)} style={{ color:'var(--error)' }}>✕</button>
-                        </div>
-                      </td>
+        <Reveal delay={0.05}>
+          <div className="card glass overflow-hidden" style={{ border: '1px solid var(--accent-soft)', marginTop: 24 }}>
+            <div className="table-container">
+              {loading ? (
+                <div className="page-loader"><div className="spinner" /></div>
+              ) : returns.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon" style={{ color: 'var(--accent)' }}>↩</div>
+                  <h3 style={{ fontFamily: 'var(--font-display)' }}>No active returns</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>When a client requests an exchange or refund, it will appear here.</p>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      <th>Reference</th><th>Order</th><th>Client</th><th>Reasoning</th><th>Resolution</th><th>Phase</th><th>Refund</th><th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {returns.map((r, idx) => (
+                      <motion.tr 
+                        key={r._id} 
+                        initial={{ opacity:0, y:8 }} 
+                        animate={{ opacity:1, y:0 }} 
+                        transition={{ delay: idx * 0.03, duration:0.4 }}
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                      >
+                        <td><span className="id-chip" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>{r.returnId}</span></td>
+                        <td><span className="id-chip" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>{r.orderId}</span></td>
+                        <td>
+                           <div className="cell-primary" style={{ fontWeight: 600 }}>{r.customerName || r.customerId}</div>
+                        </td>
+                        <td style={{ fontSize: '0.8rem', opacity: 0.6 }}>{r.reason}</td>
+                        <td style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent)' }}>{r.type}</td>
+                        <td><span className={`badge badge-${(r.status||'requested').toLowerCase().replace(' ','-')}`} style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>{r.status}</span></td>
+                        <td className="cell-primary" style={{ fontWeight: 800 }}>{formatCurrency(r.refundAmount || 0)}</td>
+                        <td>
+                          <div className="action-btns">
+                            <button className="btn-icon-sm" onClick={()=>openEdit(r)} style={{ color: 'var(--accent)' }}>✎</button>
+                            <button className="btn-icon-sm" onClick={()=>handleDelete(r._id)} style={{ color: '#F87171' }}>✕</button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {totalPages > 1 && (
+              <div className="pagination" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                <span className="page-info">Page {page} / {totalPages}</span>
+                <button className="page-btn glass" onClick={()=>setPage(p=>p-1)} disabled={page===1}>←</button>
+                <button className="page-btn glass" onClick={()=>setPage(p=>p+1)} disabled={page===totalPages}>→</button>
+              </div>
             )}
           </div>
-          {totalPages > 1 && (
-            <div className="pagination" style={{ padding:'16px 20px' }}>
-              <span className="page-info">Page {page} of {totalPages}</span>
-              <button className="page-btn" onClick={()=>setPage(p=>p-1)} disabled={page===1}>←</button>
-              <button className="page-btn" onClick={()=>setPage(p=>p+1)} disabled={page===totalPages}>→</button>
-            </div>
-          )}
-        </div>
+        </Reveal>
       </div>
 
       {showModal && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
-          <div className="modal">
+          <div className="modal glass md animate-vibe" style={{ border: '1px solid var(--accent-border)' }}>
             <div className="modal-header">
-              <h2 className="modal-title">{editing ? 'Edit Return' : 'New Return'}</h2>
+              <h2 className="modal-title" style={{ fontFamily: 'var(--font-display)', fontWeight: 800 }}>{editing ? 'Optimize Return' : 'Log New Return Case'}</h2>
               <button className="modal-close" onClick={()=>setShowModal(false)}>✕</button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleSave}>
-                <div className="form-grid">
+                <div className="section-label" style={{ color: 'var(--accent)', fontSize: '0.65rem' }}>Case Identity</div>
+                <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Order ID *</label>
-                    <input className="form-input" value={form.orderId} onChange={e=>setForm(p=>({...p,orderId:e.target.value}))} placeholder="ORD-0001" required />
+                    <label className="form-label">Order Reference *</label>
+                    <input className="form-input glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.orderId} onChange={e=>setForm(p=>({...p,orderId:e.target.value}))} placeholder="ORD-XXXX" required />
                   </div>
                   <div className="form-group">
-                    <label   className="form-label">Customer ID</label>
-                    <input className="form-input" value={form.customerId} onChange={e=>setForm(p=>({...p,customerId:e.target.value}))} placeholder="CUST-0001" />
+                    <label className="form-label">Client Reference</label>
+                    <input className="form-input glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.customerId} onChange={e=>setForm(p=>({...p,customerId:e.target.value}))} placeholder="CUS-XXXX" />
                   </div>
+                </div>
+
+                <div className="section-label" style={{ color: 'var(--accent)', fontSize: '0.65rem' }}>Reasoning & Status</div>
+                <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Reason *</label>
-                    <select className="form-select" value={form.reason} onChange={e=>setForm(p=>({...p,reason:e.target.value}))} required>
+                    <label className="form-label">Primary Reason</label>
+                    <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.reason} onChange={e=>setForm(p=>({...p,reason:e.target.value}))} required>
                       {REASONS.map(r=><option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Type *</label>
-                    <select className="form-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))} required>
+                    <label className="form-label">Resolution Path</label>
+                    <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))} required>
                       {TYPES.map(t=><option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Status *</label>
-                    <select className="form-select" value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} required>
+                    <label className="form-label">Current Phase</label>
+                    <select className="form-select glass" style={{ border: '1px solid var(--accent-soft)' }} value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} required>
                       {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Refund Amount (PKR)</label>
-                    <input className="form-input" type="number" min="0" value={form.refundAmount} onChange={e=>setForm(p=>({...p,refundAmount:e.target.value}))} />
-                  </div>
-                  <div className="form-group" style={{ gridColumn:'1 / -1' }}>
-                    <label className="form-label">Notes</label>
-                    <textarea className="form-input" rows="3" value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} />
+                    <label className="form-label">Adjustment Amount</label>
+                    <input className="form-input glass" style={{ border: '1px solid var(--accent-soft)' }} type="number" min="0" value={form.refundAmount} onChange={e=>setForm(p=>({...p,refundAmount:e.target.value}))} />
                   </div>
                 </div>
-                <div className="form-actions">
-                  <button type="button" className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? '⟳ Saving…' : editing ? 'Update Return' : 'Create Return'}</button>
+
+                <div className="form-group full-width" style={{ marginTop: 16 }}>
+                  <label className="form-label">Internal Analysis / Notes</label>
+                  <textarea className="form-textarea glass" style={{ border: '1px solid var(--accent-soft)' }} rows="2" value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} />
+                </div>
+
+                <div className="form-actions" style={{ marginTop:32, borderTop:'1px solid rgba(255,255,255,0.03)', paddingTop:24 }}>
+                   <button type="button" className="btn btn-secondary glass" onClick={()=>setShowModal(false)}>Discard</button>
+                   <button type="submit" className="btn" style={{ background: 'var(--accent)', color: 'white', fontWeight: 700 }} disabled={saving}>{saving ? 'Syncing...' : 'Finalize Case'}</button>
                 </div>
               </form>
             </div>
@@ -253,5 +275,6 @@ export default function Returns() {
         </div>
       )}
     </div>
+
   );
 }

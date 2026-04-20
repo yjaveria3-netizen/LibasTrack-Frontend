@@ -5,40 +5,38 @@ import api from '../utils/api';
 import { QUICK_ACTIONS } from '../utils/navItems';
 import { motion } from 'framer-motion';
 import {
-  BarChart, Bar, XAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, Legend
+  AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import {
   Reveal, StaggerContainer, StaggerItem, SplitText,
-  MagneticButton, TiltCard, GlowCard, AnimatedCounter, ease,
+  MagneticButton, GlowCard, AnimatedCounter,
 } from '../components/Motion';
 
-const getHour = () => new Date().getHours();
-const greeting = () => getHour() < 12 ? 'Good morning' : getHour() < 17 ? 'Good afternoon' : 'Good evening';
-
-/* Custom rose-themed recharts tooltip */
-const RoseTooltip = ({ active, payload, label, formatCurrency }) => {
-  if (active && payload && payload.length) {
-    return (
-      <motion.div
-        initial={{ opacity:0, y:6, scale:0.96 }}
-        animate={{ opacity:1, y:0, scale:1 }}
-        style={{
-          background:'#fff', border:'1px solid rgba(212,117,107,0.2)',
-          borderRadius:10, padding:'10px 14px',
-          boxShadow:'0 8px 24px rgba(212,117,107,0.16)',
-          fontFamily:'Outfit, sans-serif',
-        }}
-      >
-        <div style={{ fontSize:'0.68rem', color:'var(--text-muted)', marginBottom:4, letterSpacing:'0.08em', textTransform:'uppercase' }}>{label}</div>
-        <div style={{ fontSize:'1rem', fontWeight:700, color:'var(--text-primary)' }}>
-          {formatCurrency ? formatCurrency(payload[0].value) : payload[0].value?.toLocaleString()}
-        </div>
-      </motion.div>
-    );
-  }
-  return null;
+/* Custom premium tooltip */
+const PremiumTooltip = ({ active, payload, label, formatCurrency }) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="chart-tooltip glass"
+    >
+      <div className="tooltip-label">{label}</div>
+      <div className="tooltip-value">
+        {formatCurrency ? formatCurrency(payload[0].value) : payload[0].value?.toLocaleString()}
+      </div>
+    </motion.div>
+  );
 };
+
+/* Placeholder skeleton for stat cards */
+const StatSkeleton = () => (
+  <div className="stats-grid">
+    {Array.from({ length: 4 }).map((_, i) => (
+      <div key={i} className="skeleton" style={{ height: 130, borderRadius: 16 }} />
+    ))}
+  </div>
+);
 
 export default function Dashboard() {
   const { user, formatCurrency } = useAuth();
@@ -48,6 +46,7 @@ export default function Dashboard() {
   const brand = user?.brand || {};
 
   useEffect(() => {
+    let cancelled = false;
     const fetchStats = async () => {
       try {
         const [products, orders, customers, financial, suppliers] = await Promise.all([
@@ -57,86 +56,131 @@ export default function Dashboard() {
           api.get('/financial/stats/summary').catch(() => ({ data: {} })),
           api.get('/suppliers/stats/summary').catch(() => ({ data: {} })),
         ]);
-        setStats({
-          products: products.data, orders: orders.data,
-          customers: customers.data, financial: financial.data, suppliers: suppliers.data
-        });
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
+        if (!cancelled) {
+          setStats({
+            products: products.data, orders: orders.data,
+            customers: customers.data, financial: financial.data, suppliers: suppliers.data,
+          });
+        }
+      } catch (e) {
+        console.error('Dashboard stats error:', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     fetchStats();
+    return () => { cancelled = true; };
   }, []);
 
+  /* Sample revenue data — replace with real API when available */
   const sparkData = [
-    { m:'Jan', v:320000 }, { m:'Feb', v:290000 }, { m:'Mar', v:480000 },
-    { m:'Apr', v:410000 }, { m:'May', v:560000 }, { m:'Jun', v:500000 },
-    { m:'Jul', v:680000 },
+    { m: 'Jan', v: 320000 }, { m: 'Feb', v: 290000 }, { m: 'Mar', v: 480000 },
+    { m: 'Apr', v: 410000 }, { m: 'May', v: 560000 }, { m: 'Jun', v: 500000 },
+    { m: 'Jul', v: 680000 },
   ];
 
-  const today = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const today = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const statCards = [
+    {
+      label: 'Total Revenue',
+      value: stats?.financial?.completedRevenue || 0,
+      isCurrency: true,
+      trend: 'up',
+      icon: '💳',
+    },
+    {
+      label: 'Orders',
+      value: stats?.orders?.total || 0,
+      trend: 'none',
+      icon: '📦',
+    },
+    {
+      label: 'Customers',
+      value: stats?.customers?.total || 0,
+      trend: 'up',
+      icon: '👤',
+    },
+    {
+      label: 'Active ROI',
+      value: 88,
+      isPct: true,
+      trend: 'up',
+      icon: '📈',
+    },
+  ];
 
   const modules = [
-    { num:'01 · Orders', title:'Order Pipeline', desc:'13 statuses, channels, priority flags', sub: stats?.orders?.pending > 0 ? `${stats.orders.pending} pending` : null, to:'/orders' },
-    { num:'02 · Inventory', title:'Products', desc:`${stats?.products?.total || 0} items · ${stats?.products?.categories || 0} categories`, sub: stats?.products?.lowStock > 0 ? `${stats.products.lowStock} low stock` : null, to:'/products' },
-    { num:'03 · CRM', title:'Customers', desc:'VIP · Loyal · At-Risk segments', sub:`${stats?.customers?.total || 0} clients`, to:'/customers' },
-    { num:'04 · Finance', title:'Financial', desc:'Multi-method payments', sub:`${formatCurrency(stats?.financial?.pendingRevenue || 0)} pending`, to:'/financial' },
-    { num:'05 · Returns', title:'Returns', desc:'Full lifecycle tracking', to:'/returns' },
-    { num:'06 · Suppliers', title:'Supply Chain', desc:`${stats?.suppliers?.active || 0} active vendors`, to:'/suppliers' },
+    {
+      num: '01', title: 'Orders',
+      desc: 'Manage pipeline & statuses',
+      sub: stats?.orders?.pending > 0 ? `${stats.orders.pending} pending` : null,
+      to: '/orders',
+    },
+    {
+      num: '02', title: 'Inventory',
+      desc: `${stats?.products?.total || 0} items in stock`,
+      sub: stats?.products?.lowStock > 0 ? `${stats.products.lowStock} low stock` : null,
+      to: '/products',
+    },
+    {
+      num: '03', title: 'Customers',
+      desc: 'VIP & Loyal segment tracking',
+      sub: `${stats?.customers?.total || 0} active`,
+      to: '/customers',
+    },
+    {
+      num: '04', title: 'Finance',
+      desc: 'Revenue & payments',
+      sub: formatCurrency ? `${formatCurrency(stats?.financial?.pendingRevenue || 0)} pending` : null,
+      to: '/financial',
+    },
   ];
 
   return (
-    <div>
-      {/* ── Page Header ── */}
+    <div className="dashboard-wrapper">
+      {/* ── PAGE HEADER ── */}
       <div className="page-header">
         <div className="page-header-inner">
           <div>
             <Reveal delay={0.05} direction="none">
-              <div style={{ fontSize:'0.62rem', color:'var(--rose-muted)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:5, fontWeight:700 }}>
-                {greeting()}, {user?.name?.split(' ')[0]}
-              </div>
+              <div className="greeting-text">Welcome back, {user?.name?.split(' ')[0] || 'there'}</div>
             </Reveal>
 
             <SplitText
               text={brand.name || 'Dashboard'}
               tag="h1"
-              style={{
-                fontFamily:'Cormorant Garamond, Georgia, serif',
-                fontSize:'2.2rem', fontWeight:400, fontStyle:'italic',
-                color:'var(--text-primary)', lineHeight:1.1,
-              }}
-              delay={0.1}
+              className="page-title"
+              delay={0.08}
               stagger={0.05}
             />
 
-            <Reveal delay={0.3} direction="up">
+            <Reveal delay={0.28} direction="up">
               <p className="page-subtitle">
                 {brand.category && (
-                  <span style={{ background:'var(--rose-soft)', color:'var(--rose)', padding:'2px 8px', borderRadius:20, fontSize:'0.62rem', fontWeight:700, marginRight:8, border:'1px solid var(--rose-border)' }}>
-                    {brand.category}
-                  </span>
+                  <span className="brand-badge">{brand.category}</span>
                 )}
                 Your brand is performing beautifully — {today}
-                {user?.storageType === 'google_drive' && user?.driveConnected && (
-                  <>
-                    <motion.span
-                      className="sync-dot rose"
-                      style={{ marginLeft:10 }}
-                      animate={{ scale:[1,1.6,1], opacity:[1,0.4,1] }}
-                      transition={{ duration:2, repeat:Infinity }}
-                    />
-                    Google Sheets syncing
-                  </>
-                )}
               </p>
             </Reveal>
           </div>
 
-          <Reveal delay={0.35} direction="left">
-            <div style={{ display:'flex', gap:10 }}>
-              <MagneticButton className="btn btn-primary" onClick={() => navigate('/orders')}>
+          <Reveal delay={0.32} direction="left">
+            <div className="header-actions">
+              <MagneticButton
+                className="btn btn-primary"
+                onClick={() => navigate('/orders')}
+                aria-label="Create new order"
+              >
                 + New Order
               </MagneticButton>
-              <MagneticButton className="btn btn-secondary" onClick={() => navigate('/products')}>
+              <MagneticButton
+                className="btn btn-secondary"
+                onClick={() => navigate('/products')}
+                aria-label="Add new product"
+              >
                 Add Product
               </MagneticButton>
             </div>
@@ -144,254 +188,268 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── PAGE BODY ── */}
       <div className="page-body">
-
-        {/* Drive banner */}
-        {user?.storageType === 'google_drive' && !user?.driveConnected && (
-          <Reveal delay={0.1}>
-            <div className="drive-banner">
-              <span className="drive-banner-icon">⤴</span>
-              <div className="drive-banner-text">
-                <h4>Connect Google Drive to enable live sync</h4>
-                <p>Every entry will sync instantly to your Google Sheets.</p>
-              </div>
-              <MagneticButton className="btn btn-primary btn-sm" onClick={() => navigate('/drive-setup')}>
-                Setup Now
-              </MagneticButton>
-            </div>
-          </Reveal>
-        )}
-
         {loading ? (
-          <div className="page-loader">
-            <motion.div
-              style={{ width:32, height:32, borderRadius:'50%', border:'2px solid rgba(212,117,107,0.2)', borderTop:'2px solid var(--rose)' }}
-              animate={{ rotate:360 }}
-              transition={{ duration:0.8, repeat:Infinity, ease:'linear' }}
-            />
-          </div>
+          <>
+            {/* Skeleton state */}
+            <div className="stats-container">
+              <StatSkeleton />
+            </div>
+            <div className="page-loader" style={{ marginTop: 40 }}>
+              <div className="spinner" aria-label="Loading dashboard…" />
+            </div>
+          </>
         ) : (
           <>
-            {/* ── STAT CARDS with counting numbers ── */}
-            <StaggerContainer staggerDelay={0.07} delayStart={0.05} style={{ marginBottom:28 }}>
-              <div className="stats-grid">
-                {[
-                  { label:'Revenue', value: stats?.financial?.completedRevenue || 0, prefix:'', isCurrency:true, sub:'↑ 18% vs last month', subColor:'var(--emerald)' },
-                  { label:'Orders', value: stats?.orders?.total || 0, sub: stats?.orders?.pending > 0 ? `${stats.orders.pending} pending →` : '↑ 12% this month', subColor:'var(--rose)' },
-                  { label:'Customers', value: stats?.customers?.total || 0, sub: stats?.customers?.thisMonth > 0 ? `↑ ${stats.customers.thisMonth} new this month` : 'Growing steadily', subColor:'var(--emerald)' },
-                  { label:'Returns', value: stats?.orders?.returned || 0, sub:'↓ 2% rate', subColor:'var(--amber)', valueColor:'var(--rose)' },
-                ].map((s, i) => (
-                  <StaggerItem key={i}>
-                    <GlowCard className="stat-card" onClick={() => {}}>
-                      <div className="stat-label">{s.label}</div>
-                      <div className="stat-value" style={{ color: s.valueColor || 'var(--text-primary)', fontSize: s.isCurrency ? '1.4rem' : undefined }}>
+            {/* ── STAT CARDS ── */}
+            <StaggerContainer
+              staggerDelay={0.07}
+              delayStart={0.05}
+              className="stats-container"
+            >
+              <div className="stats-grid" role="list" aria-label="Key metrics">
+                {statCards.map((s, i) => (
+                  <StaggerItem key={s.label} role="listitem">
+                    <GlowCard
+                      className="stat-card card glass"
+                      aria-label={`${s.label}: ${s.isCurrency ? formatCurrency(s.value) : s.value}`}
+                    >
+                      {/* Icon + label row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <div className="stat-label">{s.label}</div>
+                        <span style={{ fontSize: '1.2rem', opacity: 0.5 }} aria-hidden="true">{s.icon}</span>
+                      </div>
+
+                      {/* Value */}
+                      <div className="stat-value">
                         {s.isCurrency
                           ? formatCurrency(s.value)
-                          : <AnimatedCounter value={s.value} delay={0.3 + i * 0.1} />
-                        }
+                          : s.isPct
+                            ? `${s.value}%`
+                            : <AnimatedCounter value={s.value} delay={0.3 + i * 0.1} />}
                       </div>
-                      {s.sub && <div className="stat-change" style={{ color:s.subColor }}>{s.sub}</div>}
+
+                      {/* Trend bar */}
+                      <div
+                        style={{ height: 3, background: 'var(--accent-soft)', borderRadius: 99, marginTop: 16, overflow: 'hidden' }}
+                        role="presentation"
+                      >
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: s.trend === 'up' ? '72%' : '45%' }}
+                          transition={{ duration: 1.4, delay: 0.4 + i * 0.1, ease: 'easeOut' }}
+                          style={{ height: '100%', background: 'var(--accent)', borderRadius: 99 }}
+                        />
+                      </div>
+
+                      {s.trend === 'up' && (
+                        <div className="stat-sub up" aria-label="Trending up">↑ Trending up</div>
+                      )}
                     </GlowCard>
                   </StaggerItem>
                 ))}
               </div>
             </StaggerContainer>
 
-            {/* ── TWO-COLUMN BODY ── */}
-            <div style={{ display:'grid', gridTemplateColumns:'1.55fr 1fr', gap:20, marginBottom:28 }}>
-
-              {/* Module TiltCards 2×3 grid */}
-              <StaggerContainer staggerDelay={0.06} delayStart={0.1}>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                  {modules.map((mod, i) => (
-                    <StaggerItem key={i} direction="up">
-                      <TiltCard
-                        onClick={() => navigate(mod.to)}
-                        style={{
-                          background:'#fff', border:'1px solid var(--border-faint)',
-                          borderRadius:12, padding:'18px',
-                          boxShadow:'var(--shadow-sm)', cursor:'pointer',
-                          position:'relative', overflow:'hidden',
-                        }}
-                      >
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-                          <div style={{ fontSize:'0.58rem', fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:'rgba(212,117,107,0.5)' }}>
-                            {mod.num}
-                          </div>
-                          <motion.div
-                            style={{ width:6, height:6, borderRadius:'50%', background:'rgba(212,117,107,0.25)' }}
-                            whileHover={{ background:'var(--rose)', boxShadow:'0 0 8px var(--rose-glow)' }}
-                          />
-                        </div>
-                        <div style={{ fontSize:'0.95rem', fontWeight:700, color:'var(--text-primary)', marginBottom:4 }}>{mod.title}</div>
-                        <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.4 }}>{mod.desc}</div>
-                        {mod.sub && (
-                          <div style={{ marginTop:10, fontSize:'0.7rem', fontWeight:600, color:'var(--rose)' }}>{mod.sub}</div>
-                        )}
-                      </TiltCard>
-                    </StaggerItem>
-                  ))}
-                </div>
-              </StaggerContainer>
-
-              {/* Right column: mini panels */}
-              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                {[
-                  { label:'Delivery Rate', value:'94%', fill:0.94, color:'var(--rose)', fillClass:'', extra:'Excellent · 94 / 100 orders', delay:0.6 },
-                  { label:'Inventory Value', value: formatCurrency(stats?.products?.totalValue || 0), fill:0.72, color:'var(--amber)', fillClass:'amber', extra:`Well stocked · ${stats?.products?.categories || 0} categories`, delay:0.7 },
-                  { label:'Launch Checklist', value:'78% done', fill:0.78, color:'var(--sky)', fillClass:'sky', extra:'7 / 10 phases', delay:0.8, to:'/checklist' },
-                  { label:'Active Suppliers', value:`${stats?.suppliers?.active || 0} partners`, fill: (stats?.suppliers?.active || 0) / Math.max(stats?.suppliers?.total || 1, 1), color:'var(--rose)', fillClass:'', extra:`${stats?.suppliers?.total || 0} total vendors`, delay:0.9, to:'/suppliers' },
-                ].map((item, i) => (
-                  <Reveal key={i} delay={item.delay} direction="left">
-                    <GlowCard
-                      className="card"
-                      style={{ padding:'16px 18px' }}
-                      onClick={item.to ? () => navigate(item.to) : undefined}
-                    >
-                      <div style={{ fontSize:'0.58rem', color:'var(--rose-muted)', textTransform:'uppercase', letterSpacing:'0.16em', fontWeight:700, marginBottom:8 }}>
-                        {item.label}
-                      </div>
-                      <div style={{ fontFamily:'Cormorant Garamond, Georgia, serif', fontSize:'1.6rem', fontWeight:300, color:'var(--text-primary)' }}>
-                        {item.value}
-                      </div>
-                      <div className="progress-bar" style={{ marginTop:10 }}>
-                        <motion.div
-                          className={`progress-fill ${item.fillClass}`}
-                          style={{ height:'100%', background:item.color, borderRadius:4 }}
-                          initial={{ scaleX:0 }}
-                          animate={{ scaleX: item.fill }}
-                          transition={{ duration:1.2, delay: item.delay + 0.3, ease: ease.out }}
-                        />
-                      </div>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:5, fontSize:'0.65rem', color:'var(--text-muted)' }}>
-                        <span>{item.extra}</span>
-                      </div>
-                    </GlowCard>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-
-            {/* ── CHARTS ROW ── */}
-            <StaggerContainer staggerDelay={0.1} delayStart={0.05}>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(340px, 1fr))', gap:20, marginBottom:28 }}>
-
-                {/* Revenue Area Chart */}
-                <StaggerItem direction="up">
-                  <div className="card" style={{ padding:'20px 20px 10px' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18 }}>
-                      <motion.div
-                        style={{ width:4, height:18, background:'var(--rose)', borderRadius:4 }}
-                        animate={{ opacity:[0.5,1,0.5] }}
-                        transition={{ duration:3, repeat:Infinity }}
+            {/* ── MAIN GRID ── */}
+            <div className="dashboard-grid">
+              {/* Left column */}
+              <div className="modules-grid-wrap">
+                {/* Revenue chart */}
+                <Reveal delay={0.15} direction="up">
+                  <div className="card glass" style={{ padding: '26px', marginBottom: 24 }}>
+                    <div className="card-header">
+                      <h2 className="card-title">Revenue Trajectory</h2>
+                      <div
+                        className="tm-db-live"
+                        title="Live data"
+                        role="status"
+                        aria-label="Live data indicator"
                       />
-                      <div className="card-title" style={{ margin:0 }}>Revenue trajectory</div>
                     </div>
-                    <div style={{ height:220 }}>
+
+                    <div className="chart-container" aria-label="Revenue chart for the last 7 months">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={sparkData}>
+                        <AreaChart data={sparkData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                           <defs>
-                            <linearGradient id="roseGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#D4756B" stopOpacity={0.16}/>
-                              <stop offset="95%" stopColor="#D4756B" stopOpacity={0}/>
+                            <linearGradient id="vibePurple" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.28} />
+                              <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(212,117,107,0.08)" />
-                          <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fill:'#C9A8A4', fontSize:11 }} />
-                          <Tooltip content={<RoseTooltip formatCurrency={formatCurrency} />} />
-                          <Area type="monotone" dataKey="v" stroke="#D4756B" strokeWidth={2.5} fill="url(#roseGrad)" isAnimationActive animationDuration={1600} />
+                          <CartesianGrid
+                            vertical={false}
+                            strokeDasharray="4 4"
+                            stroke="rgba(255,255,255,0.04)"
+                          />
+                          <XAxis
+                            dataKey="m"
+                            axisLine={false} tickLine={false}
+                            tick={{ fill: 'rgba(255,255,255,0.22)', fontSize: 11, fontWeight: 600 }}
+                          />
+                          <Tooltip
+                            content={<PremiumTooltip formatCurrency={formatCurrency} />}
+                            cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="v"
+                            stroke="var(--accent)"
+                            strokeWidth={3}
+                            fill="url(#vibePurple)"
+                            animationDuration={1800}
+                            dot={false}
+                            activeDot={{ r: 5, fill: 'var(--accent)', stroke: 'none' }}
+                          />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
-                </StaggerItem>
+                </Reveal>
 
-                {/* Payment Methods */}
-                {stats?.financial?.byMethod?.length > 0 && (
-                  <StaggerItem direction="up">
-                    <div className="card" style={{ padding:'20px 20px 10px' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18 }}>
-                        <motion.div style={{ width:4, height:18, background:'var(--emerald)', borderRadius:4 }} animate={{ opacity:[0.5,1,0.5] }} transition={{ duration:3, repeat:Infinity, delay:1 }} />
-                        <div className="card-title" style={{ margin:0 }}>Payment methods</div>
-                      </div>
-                      <div style={{ height:220 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={stats.financial.byMethod}>
-                            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(212,117,107,0.08)" />
-                            <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fill:'#C9A8A4', fontSize:11 }} />
-                            <Tooltip content={<RoseTooltip formatCurrency={formatCurrency} />} cursor={{ fill:'rgba(212,117,107,0.04)' }} />
-                            <Bar dataKey="total" fill="#D4756B" radius={[4,4,0,0]} barSize={26} isAnimationActive animationDuration={1400} animationBegin={300} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </StaggerItem>
-                )}
-
-                {/* Order Status Donut */}
-                {stats?.orders?.total > 0 && (
-                  <StaggerItem direction="up">
-                    <div className="card" style={{ padding:'20px 20px 10px' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18 }}>
-                        <motion.div style={{ width:4, height:18, background:'var(--sky)', borderRadius:4 }} animate={{ opacity:[0.5,1,0.5] }} transition={{ duration:3, repeat:Infinity, delay:2 }} />
-                        <div className="card-title" style={{ margin:0 }}>Order completion</div>
-                      </div>
-                      <div style={{ height:220 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={[
-                                { name:'Pending', value: stats.orders.pending || 0, color:'#E8A89A' },
-                                { name:'Delivered', value: stats.orders.delivered || 0, color:'#4A8C68' },
-                                { name:'Other', value: Math.max(0, stats.orders.total - ((stats.orders.pending||0) + (stats.orders.delivered||0))), color:'#C9A0A0' }
-                              ].filter(d => d.value > 0)}
-                              cx="50%" cy="50%" innerRadius={60} outerRadius={82}
-                              paddingAngle={5} dataKey="value" stroke="none"
-                              isAnimationActive animationDuration={1500} animationBegin={800}
+                {/* Module quick links */}
+                <StaggerContainer staggerDelay={0.08} delayStart={0.25}>
+                  <div className="grid-2x2" role="list" aria-label="Module shortcuts">
+                    {modules.map((mod, i) => (
+                      <StaggerItem key={mod.title} role="listitem">
+                        <motion.div
+                          className="module-card card glass"
+                          onClick={() => navigate(mod.to)}
+                          whileHover={{ y: -4, transition: { duration: 0.22 } }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Go to ${mod.title}`}
+                          onKeyDown={(e) => e.key === 'Enter' && navigate(mod.to)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="module-num" aria-hidden="true">{mod.num}</div>
+                          <div className="module-title">{mod.title}</div>
+                          <div className="module-desc">{mod.desc}</div>
+                          {mod.sub && (
+                            <div
+                              className="module-sub"
+                              style={{ marginTop: 10, fontSize: '0.70rem', fontWeight: 700, color: 'var(--accent)' }}
                             >
-                              {['#E8A89A','#4A8C68','#C9A0A0'].map((c, i) => <Cell key={i} fill={c} />)}
-                            </Pie>
-                            <Tooltip content={<RoseTooltip />} />
-                            <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize:'0.72rem', fontFamily:'Outfit', color:'var(--text-muted)' }} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </StaggerItem>
-                )}
+                              {mod.sub}
+                            </div>
+                          )}
+                          <div
+                            style={{ color: 'var(--accent)', marginTop: 14, fontSize: '1.1rem' }}
+                            aria-hidden="true"
+                          >
+                            →
+                          </div>
+                        </motion.div>
+                      </StaggerItem>
+                    ))}
+                  </div>
+                </StaggerContainer>
               </div>
-            </StaggerContainer>
 
-            {/* ── QUICK ACTIONS ── */}
-            <Reveal delay={0.05}>
-              <div className="section-label">Quick Actions</div>
-            </Reveal>
-            <StaggerContainer staggerDelay={0.05} delayStart={0.05}>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:10, marginBottom:32 }}>
-                {QUICK_ACTIONS.map((a, i) => (
-                  <StaggerItem key={a.label} direction="up">
-                    <MagneticButton
-                      onClick={() => navigate(a.to)}
-                      strength={0.25}
-                      style={{
-                        background:'#fff', border:'1px solid var(--border-faint)',
-                        borderRadius:10, padding:'16px', textAlign:'left',
-                        transition:'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
-                        display:'flex', flexDirection:'column', gap:6,
-                        width:'100%', fontFamily:'Outfit, sans-serif',
-                        cursor:'pointer',
-                      }}
-                      className="quick-action-btn"
+              {/* Right sidebar panels */}
+              <div className="sidebar-panels">
+                {/* Delivery rate */}
+                <Reveal delay={0.5} direction="left">
+                  <div className="card glass mini-panel">
+                    <div className="panel-label">Delivery Rate</div>
+                    <div className="panel-value">94.2%</div>
+
+                    <div
+                      className="tm-db-chart"
+                      role="img"
+                      aria-label="Delivery rate sparkline chart"
                     >
-                      <span style={{ fontSize:'1.2rem', color:'var(--rose)' }}>{a.icon}</span>
-                      <div style={{ fontSize:'0.88rem', fontWeight:600, color:'var(--text-primary)' }}>{a.label}</div>
-                      <div style={{ fontSize:'0.7rem', color:'var(--text-muted)' }}>{a.desc}</div>
-                    </MagneticButton>
-                  </StaggerItem>
-                ))}
-              </div>
-            </StaggerContainer>
+                      {[30, 55, 40, 80, 60, 100, 70].map((h, i) => (
+                        <motion.div
+                          key={i}
+                          className="tm-db-bar"
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: 1 }}
+                          transition={{ delay: 0.6 + i * 0.06, duration: 0.4, ease: 'easeOut' }}
+                          style={{
+                            height: `${h}%`,
+                            background: i === 5 ? 'var(--accent)' : 'var(--accent-soft)',
+                            transformOrigin: 'bottom',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </Reveal>
 
+                {/* Collection progress */}
+                <Reveal delay={0.65}>
+                  <div
+                    className="card glass hover-glow"
+                    style={{ padding: '22px', cursor: 'pointer', marginBottom: 0 }}
+                    onClick={() => navigate('/checklist')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="View SS25 Luxury Pret checklist — 78% complete"
+                    onKeyDown={(e) => e.key === 'Enter' && navigate('/checklist')}
+                  >
+                    <div className="panel-label">Phase 7 Planning</div>
+                    <div className="panel-value" style={{ fontSize: '1.35rem' }}>SS25 Luxury Pret</div>
+
+                    {/* Progress bar */}
+                    <div
+                      style={{ height: 5, background: 'var(--bg-void)', borderRadius: 99, marginTop: 14, overflow: 'hidden' }}
+                      role="progressbar"
+                      aria-valuenow={78}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label="78% complete"
+                    >
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: '78%' }}
+                        transition={{ duration: 1.4, ease: 'easeOut' }}
+                        style={{ height: '100%', background: 'linear-gradient(90deg, var(--accent), var(--accent-deep))', borderRadius: 99 }}
+                      />
+                    </div>
+
+                    <div style={{ fontSize: '0.70rem', color: 'var(--text-faint)', marginTop: 6, fontWeight: 600 }}>
+                      78% complete — click to view checklist
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Quick actions */}
+                <Reveal delay={0.8}>
+                  <div className="card glass" style={{ padding: '22px', marginTop: 16 }}>
+                    <div
+                      className="section-label"
+                      style={{ marginTop: 0, marginBottom: 14 }}
+                      id="quick-actions-label"
+                    >
+                      Quick Actions
+                    </div>
+                    <nav
+                      aria-labelledby="quick-actions-label"
+                      className="quick-actions-list"
+                    >
+                      {QUICK_ACTIONS.slice(0, 4).map(a => (
+                        <motion.button
+                          key={a.label}
+                          className="quick-action-button"
+                          onClick={() => navigate(a.to)}
+                          whileHover={{ x: 5 }}
+                          transition={{ duration: 0.18 }}
+                          aria-label={`${a.label} — ${a.desc}`}
+                        >
+                          <span className="action-icon" aria-hidden="true">{a.icon}</span>
+                          <div>
+                            <div className="action-label">{a.label}</div>
+                            <div className="action-desc">{a.desc}</div>
+                          </div>
+                        </motion.button>
+                      ))}
+                    </nav>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
           </>
         )}
       </div>

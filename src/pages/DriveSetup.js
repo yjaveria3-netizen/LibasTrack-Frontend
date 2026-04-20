@@ -3,180 +3,391 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Reveal } from '../components/Motion';
+
+const STEPS = [
+  {
+    num: '01',
+    title: 'Create a folder',
+    desc: 'Make a dedicated "LibasTrack" folder in your Google Drive.',
+    icon: '📁',
+  },
+  {
+    num: '02',
+    title: 'Set permissions',
+    desc: 'Share the folder as "Anyone with the link" with Editor access.',
+    icon: '🔑',
+  },
+  {
+    num: '03',
+    title: 'Paste the link',
+    desc: 'Copy the folder URL and paste it in the form on the right.',
+    icon: '🔗',
+  },
+];
+
+const SHEET_ICONS = {
+  products: '👗', orders: '📦', customers: '👥',
+  financial: '💰', suppliers: '🧵', collections: '🗂️', returns: '↩️',
+};
 
 export default function DriveSetup() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ driveName: user?.brand?.name || 'LibasTrack', driveLink: '' });
+
+  const [form, setForm] = useState({ driveName: '', driveLink: '' });
   const [loading, setLoading] = useState(false);
-  const [driveStatus, setDriveStatus] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [sheets, setSheets] = useState(null);
 
   useEffect(() => {
-    if (user?.brand?.name && form.driveName === 'LibasTrack') {
-      setForm(p => ({ ...p, driveName: user.brand.name }));
-    }
-  }, [user?.brand?.name]);
-
-  useEffect(() => {
-    api.get('/drive/status').then(r => setDriveStatus(r.data));
+    api.get('/drive/status').then(r => {
+      if (r.data.connected) {
+        setStatus(r.data);
+        setSheets(r.data.spreadsheets);
+      }
+    }).catch(() => { });
   }, []);
 
   const handleConnect = async (e) => {
     e.preventDefault();
-    if (!form.driveLink) return toast.error('Please enter your Google Drive folder link');
+    if (!form.driveLink.includes('drive.google.com')) {
+      return toast.error('Please paste a valid Google Drive folder link');
+    }
     setLoading(true);
     try {
       const res = await api.post('/drive/connect', form);
-      toast.success(res.data.message);
+      setSheets(res.data.spreadsheets);
+      toast.success('Google Drive connected! Spreadsheets created ✓');
       await refreshUser();
-      setDriveStatus({ connected: true, ...res.data });
+      setTimeout(() => navigate('/dashboard'), 1800);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to connect drive');
+      toast.error(err.response?.data?.message || 'Failed to connect. Check folder permissions.');
     } finally {
       setLoading(false);
     }
   };
 
-  const STEPS = [
-    { num: 1, title: 'Sign in with Gmail', desc: 'You already did this ✓', done: true },
-    { num: 2, title: 'Connect your Drive', desc: 'Paste your Google Drive folder link below', done: driveStatus?.connected },
-    { num: 3, title: 'Start managing data', desc: 'All entries sync live to Google Sheets', done: false },
-  ];
+  const handleDisconnect = async () => {
+    if (!window.confirm('Disconnect Google Drive? Your data in MongoDB will remain.')) return;
+    try {
+      await api.post('/drive/disconnect');
+      await refreshUser();
+      setStatus(null);
+      setSheets(null);
+      toast.success('Drive disconnected');
+    } catch { toast.error('Failed to disconnect'); }
+  };
 
   return (
-    <div>
+    <div className="drive-setup-page animate-vibe">
+
+      {/* ── Page Header ── */}
       <div className="page-header">
-        <h1 className="page-title">Google Drive Setup</h1>
-        <p className="page-subtitle">Connect your drive once — all data syncs automatically to your Google Sheets</p>
+        <div className="page-header-inner">
+          <Reveal delay={0.05} direction="none">
+            <div>
+              <h1 className="page-title">Google Drive Sync</h1>
+              <p className="page-subtitle">Connect your Drive to enable real-time spreadsheet sync</p>
+            </div>
+          </Reveal>
+          {status?.connected && (
+            <button className="btn btn-secondary" onClick={handleDisconnect} style={{ color: '#F87171', borderColor: 'rgba(248,113,113,0.3)' }}>
+              Disconnect Drive
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="page-body">
-        {/* Steps */}
-        <div style={{ display:'flex', gap:16, marginBottom:32, flexWrap:'wrap' }}>
-          {STEPS.map(step => (
-            <div key={step.num} style={{
-              flex:1, minWidth:180,
-              background: step.done ? 'rgba(90,158,122,0.08)' : 'var(--bg-card)',
-              border: `1px solid ${step.done ? 'rgba(90,158,122,0.25)' : 'var(--border)'}`,
-              borderRadius:'var(--radius-lg)',
-              padding:'20px',
-            }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                <div style={{
-                  width:28, height:28, borderRadius:'50%',
-                  background: step.done ? 'var(--success)' : 'var(--bg-hover)',
-                  border: `1.5px solid ${step.done ? 'var(--success)' : 'var(--border-light)'}`,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  fontSize:'0.75rem', fontWeight:600,
-                  color: step.done ? 'white' : 'var(--text-muted)',
-                }}>
-                  {step.done ? '✓' : step.num}
-                </div>
-                <span style={{ fontFamily:'var(--font-display)', fontSize:'0.95rem', color: step.done ? 'var(--success)' : 'var(--text-primary)' }}>
-                  {step.title}
-                </span>
-              </div>
-              <p style={{ fontSize:'0.8rem', color:'var(--text-muted)', paddingLeft:38 }}>{step.desc}</p>
-            </div>
-          ))}
-        </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, alignItems:'start' }}>
-          {/* Form */}
-          <div className="card">
-            <h3 className="card-title">Connect Your Google Drive</h3>
+        {/* ── CONNECTED STATE ── */}
+        {status?.connected ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
 
-            {driveStatus?.connected ? (
-              <div>
-                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 18px', background:'rgba(90,158,122,0.08)', border:'1px solid rgba(90,158,122,0.2)', borderRadius:'var(--radius)', marginBottom:20 }}>
-                  <span style={{ fontSize:'1.25rem' }}>✓</span>
-                  <div>
-                    <div style={{ fontSize:'0.875rem', color:'var(--success)', fontWeight:500 }}>Drive Connected!</div>
-                    <div style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>{driveStatus.driveName}</div>
+            {/* Status card */}
+            <Reveal delay={0.1}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(52,211,153,0.06) 0%, rgba(52,211,153,0.02) 100%)',
+                border: '1px solid rgba(52,211,153,0.20)',
+                borderRadius: 16, padding: '28px 28px 24px',
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 14,
+                    background: 'rgba(52,211,153,0.12)',
+                    border: '1px solid rgba(52,211,153,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.6rem', flexShrink: 0,
+                  }}>
+                    ☁️
                   </div>
-                </div>
-
-                {driveStatus.spreadsheets && (
                   <div>
-                    <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.1em' }}>Your Google Sheets</p>
-                    <div className="sheet-links">
-                      {Object.entries(driveStatus.spreadsheets).map(([key, url]) => url && (
-                        <a key={key} href={url} target="_blank" rel="noreferrer" className="sheet-link">
-                          ⊞ {key.charAt(0).toUpperCase() + key.slice(1)}
-                        </a>
-                      ))}
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                      {status.driveName || 'Google Workspace'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                      <span style={{
+                        width: 7, height: 7, borderRadius: '50%',
+                        background: '#34D399', boxShadow: '0 0 8px #34D399',
+                        display: 'inline-block', animation: 'pulse 2s infinite',
+                      }} />
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34D399', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Live Sync Active
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
 
-                <button className="btn btn-secondary" style={{ marginTop:20 }} onClick={() => navigate('/dashboard')}>
-                  Go to Dashboard →
-                </button>
+                {/* Spreadsheet links */}
+                <div>
+                  <div style={{
+                    fontSize: '0.58rem', fontWeight: 800, color: 'var(--text-faint)',
+                    letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 12,
+                  }}>
+                    Synced Spreadsheets
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {sheets && Object.entries(sheets).map(([name, url]) => url && (
+                      <a
+                        key={name}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '10px 14px', borderRadius: 10, textDecoration: 'none',
+                          background: 'var(--bg-layer2)',
+                          border: '1px solid var(--border-faint)',
+                          transition: 'all 0.15s ease',
+                          color: 'var(--text-secondary)',
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = 'var(--accent-border)';
+                          e.currentTarget.style.color = 'var(--accent)';
+                          e.currentTarget.style.transform = 'translateX(3px)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = 'var(--border-faint)';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.transform = 'none';
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>{SHEET_ICONS[name] || '📄'}</span>
+                        <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 600, textTransform: 'capitalize' }}>{name}</span>
+                        <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>↗</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handleConnect}>
-                <div className="form-grid" style={{ gridTemplateColumns:'1fr' }}>
+            </Reveal>
+
+            {/* Reconnect / update form */}
+            <Reveal delay={0.15}>
+              <div style={{
+                background: 'var(--bg-layer1)',
+                border: '1px solid var(--border-faint)',
+                borderRadius: 16, padding: '28px',
+              }}>
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>
+                    Update Connection
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-faint)' }}>
+                    Switch to a different Drive folder or rename your workspace.
+                  </div>
+                </div>
+                <form onSubmit={handleConnect}>
                   <div className="form-group">
-                    <label className="form-label">Drive / Folder Name</label>
+                    <label className="form-label">Workspace Name</label>
                     <input
                       className="form-input"
                       value={form.driveName}
                       onChange={e => setForm(p => ({ ...p, driveName: e.target.value }))}
-                      placeholder={`e.g. ${user?.brand?.name || 'LibasTrack'}`}
+                      placeholder="e.g. Ayesha Atelier Drive"
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Google Drive Folder Link</label>
+                    <label className="form-label">New Folder URL</label>
                     <input
                       className="form-input"
                       value={form.driveLink}
                       onChange={e => setForm(p => ({ ...p, driveLink: e.target.value }))}
-                      placeholder="https://drive.google.com/drive/folders/..."
+                      placeholder="https://drive.google.com/drive/folders/…"
                       required
                     />
-                    <span style={{ fontSize:'0.75rem', color:'var(--text-muted)' }}>
-                      Open your Google Drive folder → right-click → "Get link" → paste here
+                  </div>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 8 }} disabled={loading}>
+                    {loading ? 'Reconnecting…' : 'Update Connection'}
+                  </button>
+                </form>
+              </div>
+            </Reveal>
+          </div>
+
+        ) : (
+
+          /* ── NOT CONNECTED STATE ── */
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, alignItems: 'start' }}>
+
+            {/* Instructions card */}
+            <Reveal delay={0.1}>
+              <div style={{
+                background: 'var(--bg-layer1)',
+                border: '1px solid var(--border-faint)',
+                borderRadius: 16, padding: '28px',
+              }}>
+                <div style={{
+                  fontSize: '0.58rem', fontWeight: 800, color: 'var(--accent)',
+                  letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 20,
+                }}>
+                  Setup Guide
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {STEPS.map((step, i) => (
+                    <div key={step.num} style={{ display: 'flex', gap: 16, position: 'relative' }}>
+                      {/* Connector line */}
+                      {i < STEPS.length - 1 && (
+                        <div style={{
+                          position: 'absolute', left: 19, top: 44, bottom: -4,
+                          width: 2, background: 'var(--border-faint)', zIndex: 0,
+                        }} />
+                      )}
+
+                      {/* Step number */}
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                        background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.7rem', fontWeight: 800, color: 'var(--accent)',
+                        position: 'relative', zIndex: 1,
+                      }}>
+                        {step.num}
+                      </div>
+
+                      <div style={{ paddingBottom: i < STEPS.length - 1 ? 24 : 0, paddingTop: 8 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 4 }}>
+                          {step.title}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                          {step.desc}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* What gets created */}
+                <div style={{
+                  marginTop: 24, padding: '14px 16px', borderRadius: 10,
+                  background: 'var(--bg-layer2)', border: '1px solid var(--border-faint)',
+                }}>
+                  <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 10 }}>
+                    Auto-created Spreadsheets
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {Object.entries(SHEET_ICONS).map(([name, icon]) => (
+                      <span key={name} style={{
+                        fontSize: '0.68rem', fontWeight: 600, padding: '3px 10px',
+                        borderRadius: 99, background: 'var(--bg-layer1)',
+                        border: '1px solid var(--border-faint)',
+                        color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5,
+                      }}>
+                        {icon} {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Connect form */}
+            <Reveal delay={0.15}>
+              <div style={{
+                background: 'var(--bg-layer1)',
+                border: '1px solid var(--accent-border)',
+                borderRadius: 16, padding: '28px',
+                boxShadow: '0 8px 32px rgba(167,139,250,0.08)',
+              }}>
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 12, marginBottom: 16,
+                    background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem',
+                  }}>
+                    ☁️
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.1rem', marginBottom: 6 }}>
+                    Connect Google Drive
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Paste your Drive folder link below. Spreadsheets will be created automatically.
+                  </div>
+                </div>
+
+                <form onSubmit={handleConnect}>
+                  <div className="form-group">
+                    <label className="form-label">Workspace Name</label>
+                    <input
+                      className="form-input"
+                      value={form.driveName}
+                      onChange={e => setForm(p => ({ ...p, driveName: e.target.value }))}
+                      placeholder="e.g. Ayesha Atelier Drive"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Google Drive Folder Link *</label>
+                    <input
+                      className="form-input"
+                      value={form.driveLink}
+                      onChange={e => setForm(p => ({ ...p, driveLink: e.target.value }))}
+                      placeholder="https://drive.google.com/drive/folders/…"
+                      required
+                    />
+                    <span className="form-hint">
+                      Open the folder in Drive → Share → Copy link → Paste here
                     </span>
                   </div>
-                </div>
-                <div className="form-actions" style={{ justifyContent:'flex-start' }}>
-                  <button className="btn btn-primary" type="submit" disabled={loading}>
-                    {loading ? '⟳ Connecting…' : '⊞ Connect Drive & Create Sheets'}
+
+                  <AnimatePresence>
+                    {loading && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '12px 14px', borderRadius: 10, marginBottom: 16,
+                          background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
+                          fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600,
+                        }}
+                      >
+                        <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                        Creating spreadsheets in your Drive…
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ width: '100%', marginTop: 4, padding: '13px' }}
+                    disabled={loading}
+                  >
+                    {loading ? 'Connecting…' : '🔗 Connect & Create Sheets'}
                   </button>
-                </div>
-              </form>
-            )}
-          </div>
+                </form>
+              </div>
+            </Reveal>
 
-          {/* Instructions */}
-          <div className="card">
-            <h3 className="card-title">How to get your Drive link</h3>
-            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              {[
-                { n:1, text:'Open Google Drive at drive.google.com' },
-                { n:2, text:`Navigate to your "${user?.brand?.name || 'LibasTrack'}" main folder` },
-                { n:3, text:'Right-click the folder → select "Get link"' },
-                { n:4, text:'Set sharing to "Anyone with the link" → copy it' },
-                { n:5, text:'Paste the link above and click Connect' },
-              ].map(step => (
-                <div key={step.n} style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
-                  <div style={{ width:24, height:24, borderRadius:'50%', background:'rgba(201,169,110,0.15)', border:'1px solid rgba(201,169,110,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.72rem', color:'var(--gold)', flexShrink:0, marginTop:1 }}>
-                    {step.n}
-                  </div>
-                  <p style={{ fontSize:'0.875rem', color:'var(--text-secondary)', lineHeight:1.5 }}>{step.text}</p>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ marginTop:20, padding:'14px', background:'rgba(201,169,110,0.05)', border:'1px solid rgba(201,169,110,0.1)', borderRadius:'var(--radius)' }}>
-              <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.6 }}>
-                <span style={{ color:'var(--gold)' }}>✦ </span>
-                We'll automatically find your <strong style={{ color:'var(--text-secondary)' }}>Database</strong> subfolder and create/connect spreadsheets for Products, Orders, Customers, and Financial data.
-              </p>
-            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

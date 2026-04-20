@@ -5,217 +5,172 @@ import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import { NAV_GROUPS } from '../utils/navItems';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../utils/api';
-import {
-  AmbientOrbs, CursorFollower, ScrollProgress,
-  FloatingPetals, MagneticButton, ease,
-} from './Motion';
+import { CursorFollower, ScrollProgress, ease } from './Motion';
 
 export default function Layout() {
-  const { user, logout, storageType, localPath } = useAuth();
+  const { user, logout, storageType } = useAuth();
   const { isDark, toggle } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
-  const brandName = user?.brand?.name || 'LibasTrack';
-
   const handleLogout = async () => {
     await logout();
     toast.success('Signed out');
-    navigate('/login');
+    navigate('/');
+  };
+
+  // Only show storage badge for Google Drive (not local mode)
+  const StorageBadge = () => {
+    if (storageType === 'google_drive' && user?.driveConnected) {
+      return (
+        <div className="sync-badge-mini">
+          <div className="sync-pulse" />
+          <span>LIVE SYNC</span>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
-    <div className="app-layout">
-
-      {/* ── Global Atmosphere ── */}
-      <AmbientOrbs />
-      <FloatingPetals count={4} />
+    <div className="app-shell">
+      {/* ... noise and grid ... */}
+      <div className="vibe-noise" aria-hidden="true" />
+      <div className="vibe-grid" aria-hidden="true" />
       <CursorFollower />
       <ScrollProgress />
 
-      {/* Animated top stripe */}
-      <div className="rose-stripe" />
+      {/* ... accent stripe ... */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, height: 2, zIndex: 1002,
+          background: 'linear-gradient(90deg, transparent, var(--accent), transparent)',
+          pointerEvents: 'none',
+        }}
+      />
 
-      {/* Mobile overlay */}
+      {/* ... mobile overlay ... */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(61,26,20,0.38)', zIndex: 199, backdropFilter: 'blur(4px)' }}
+            key="mobile-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mobile-overlay"
             onClick={() => setOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      {/* ── SIDEBAR ── */}
       <motion.nav
-        className={`sidebar ${open ? 'open' : ''}`}
-        initial={{ x: -240 }}
+        className={`sidebar glass${open ? ' open' : ''}`}
+        initial={{ x: -280 }}
         animate={{ x: 0 }}
-        transition={{ duration: 0.55, ease: ease.out }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Brand */}
-        <div className="sidebar-logo">
-          <div className="brand-wordmark">
-            <motion.div
-              className="brand-icon"
-              animate={{
-                scale: [1, 1.06, 1],
-                boxShadow: [
-                  '0 0 0 0 rgba(212,117,107,0.35)',
-                  '0 0 0 10px rgba(212,117,107,0)',
-                  '0 0 0 0 rgba(212,117,107,0.35)',
-                ],
-              }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <svg width="17" height="17" viewBox="0 0 16 16" fill="none">
-                <path d="M2 13L5 3h1.5L8 9l1.5-6H11l3 10h-1.8l-2-7-1.7 7H7.5L5.8 6l-2 7H2z" fill="white"/>
-              </svg>
+        <div className="sidebar-header">
+          <div className="brand-mark">
+            <motion.div className="tm-logo-mark" whileHover={{ scale: 1.08 }}>
+              <div className="tm-logo-sq"><div className="tm-logo-inner" /></div>
             </motion.div>
             <div>
               <div className="brand-name">LibasTrack</div>
-              <div className="brand-edition">Rose Edition</div>
+              <div className="brand-tagline">Brand OS</div>
             </div>
           </div>
-          <div className="brand-tagline">{brandName}</div>
         </div>
 
-        {/* Nav */}
-        <div className="sidebar-nav">
-          {NAV_GROUPS.map((group, gi) => (
+        <nav className="sidebar-nav">
+          {NAV_GROUPS.map((group) => (
             <div className="nav-section" key={group.section}>
-              <motion.div
-                className="nav-section-label"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 + gi * 0.05 }}
-              >
-                {group.section}
-              </motion.div>
-              {group.items.map((item, ii) => (
-                <motion.div
+              <div className="nav-section-label">{group.section}</div>
+              {group.items.map((item) => (
+                <NavLink
                   key={item.to}
-                  initial={{ opacity: 0, x: -14 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 + gi * 0.06 + ii * 0.045, ease: ease.out, duration: 0.4 }}
+                  to={item.to}
+                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                  onClick={() => setOpen(false)}
                 >
-                  <NavLink
-                    to={item.to}
-                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                    onClick={() => setOpen(false)}
-                  >
-                    <span className="nav-icon-box">{item.icon}</span>
-                    {item.label}
-                  </NavLink>
-                </motion.div>
+                  <motion.span className="nav-icon" whileHover={{ scale: 1.18 }}>{item.icon}</motion.span>
+                  <span>{item.label}</span>
+                </NavLink>
               ))}
             </div>
           ))}
-        </div>
+        </nav>
 
-        {/* Sidebar Footer */}
-        <motion.div
-          className="sidebar-footer"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65, duration: 0.4 }}
-        >
-          {/* Sync status badge (Google Drive only) */}
-          {storageType === 'google_drive' && user?.driveConnected && (
-            <div className="sync-badge" title="Syncing to Google Drive">
-              <span style={{ fontSize: '0.8rem' }}>🌐</span>
-              <span>Google Drive</span>
-              <motion.span
-                className="sync-dot"
-                style={{ marginLeft: 'auto' }}
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </div>
-          )}
-
-          {/* Dark mode toggle */}
-          <motion.button
-            className="sidebar-theme-btn"
-            onClick={toggle}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={isDark ? 'dark' : 'light'}
-                initial={{ rotate: -90, opacity: 0, scale: 0.7 }}
-                animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                exit={{ rotate: 90, opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.22 }}
-                style={{ fontSize: '1rem' }}
-              >
-                {isDark ? '☾' : '☀'}
-              </motion.span>
-            </AnimatePresence>
-            <span>{isDark ? 'Dark mode' : 'Light mode'}</span>
-          </motion.button>
-
-          {/* User pill */}
-          {user && (
-            <div className="user-pill">
-              {user.avatar
-                ? <img src={user.avatar} alt="" className="user-av" />
-                : <div className="user-av-init">{(user.brand?.name || user.name)?.[0]?.toUpperCase()}</div>
-              }
-              <div className="user-info-wrap">
-                <div className="user-info-name">{user.name}</div>
-                <div className="user-info-email">{user.email}</div>
+        <div className="sidebar-footer">
+          <div className="identity-cluster">
+            <StorageBadge />
+            <div className="identity-card">
+              <div className="user-avatar-premium">
+                {user?.avatar
+                  ? <img src={user.avatar} alt={user.name} />
+                  : (user?.brand?.name || user?.name)?.[0]?.toUpperCase()}
               </div>
-              <button className="logout-btn" onClick={handleLogout} title="Sign out">✕</button>
+              <div className="user-info">
+                <div className="user-name">{user?.name}</div>
+                <div className="user-role">{user?.email}</div>
+              </div>
+              <button
+                className="btn-ctrl"
+                onClick={handleLogout}
+                title="Sign out"
+              >
+                ↩
+              </button>
             </div>
-          )}
-        </motion.div>
+          </div>
+
+          <div className="theme-switch-row">
+            <div className="theme-label">{isDark ? 'Midnight' : 'Daylight'}</div>
+            <button
+              className="theme-toggle-compact"
+              onClick={toggle}
+              aria-label="Toggle theme"
+            >
+              {isDark ? '🌙' : '☀️'}
+            </button>
+          </div>
+        </div>
       </motion.nav>
 
-      {/* ── Main Content ── */}
-      <main className="main-content">
-        {/* Mobile topbar */}
-        <div className="mobile-header">
-          <MagneticButton
+      {/* MAIN CONTENT */}
+      <main className="main-content" role="main" id="main-content">
+        {/* Mobile top bar */}
+        <header className="mobile-top-bar glass" role="banner">
+          <button
+            className="menu-trigger"
             onClick={() => setOpen(true)}
-            style={{
-              background: 'var(--rose-soft)', border: '1px solid var(--rose-border-mid)',
-              color: 'var(--rose)', borderRadius: 20, padding: '6px 14px',
-              fontSize: '0.78rem', fontFamily: 'Outfit, sans-serif', fontWeight: 600,
-            }}
+            aria-label="Open navigation menu"
+            aria-expanded={open}
+            aria-controls="main-navigation"
           >
-            ☰ Menu
-          </MagneticButton>
-          <span style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
-            fontSize: '1.1rem', fontStyle: 'italic', fontWeight: 500, color: 'var(--text-primary)'
-          }}>
-            LibasTrack
-          </span>
-          <MagneticButton
+            ☰
+          </button>
+          <div className="mobile-logo-text">LibasTrack</div>
+          <button
+            className="mobile-theme-btn"
             onClick={toggle}
-            style={{
-              background: 'var(--rose-soft)', border: '1px solid var(--rose-border)',
-              color: 'var(--rose)', borderRadius: '50%', width: 34, height: 34,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem'
-            }}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {isDark ? '☾' : '☀'}
-          </MagneticButton>
-        </div>
+            {isDark ? '☀️' : '🌙'}
+          </button>
+        </header>
 
-        {/* Page transition */}
+        {/* Page transitions */}
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 18, filter: 'blur(4px)' }}
+            initial={{ opacity: 0, y: 14, filter: 'blur(4px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: -10, filter: 'blur(2px)' }}
-            transition={{ duration: 0.38, ease: ease.out }}
-            style={{ position: 'relative', zIndex: 10 }}
+            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            className="page-transition-wrapper"
           >
             <Outlet />
           </motion.div>
