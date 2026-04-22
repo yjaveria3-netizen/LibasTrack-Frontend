@@ -299,7 +299,10 @@ export default function Products() {
       await api.delete(`/products/${id}`);
       toast.success('Product deleted');
       fetchProducts();
-    } catch { toast.error('Failed to delete'); }
+    } catch (err) {
+      console.error('Delete product error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to delete product. Please try again.');
+    }
   };
 
   const margin = (cost, price) =>

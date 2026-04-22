@@ -43,9 +43,10 @@ export default function Financial() {
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);
       setStats(s.data);
-    } catch {
+    } catch (err) {
+      console.error('Fetch transactions error:', err.message);
       setLoadError('Unable to load transactions right now.');
-      toast.error('Failed to load transactions');
+      toast.error(err.response?.data?.message || 'Failed to load transactions');
     }
     finally { setLoading(false); }
   }, [page, search, statusFilter]);
@@ -70,8 +71,14 @@ export default function Financial() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this transaction?')) return;
-    try { await api.delete(`/financial/${id}`); toast.success('Transaction deleted'); fetchData(); }
-    catch { toast.error('Failed to delete'); }
+    try {
+      await api.delete(`/financial/${id}`);
+      toast.success('Transaction deleted');
+      fetchData();
+    } catch (err) {
+      console.error('Delete transaction error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to delete transaction');
+    }
   };
 
   return (

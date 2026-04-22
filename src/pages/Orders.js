@@ -86,7 +86,11 @@ export default function Orders() {
     try {
       const res = await api.get('/customers?limit=200');
       setCustomers(res.data.customers || []);
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load customers dropdown:', err.message);
+      toast.error('Unable to load customer list. Please try again.');
+      setCustomers([]);
+    }
   };
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));

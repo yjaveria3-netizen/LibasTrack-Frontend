@@ -54,15 +54,19 @@ export default function Customers() {
       if (segmentFilter) params.set('segment', segmentFilter);
       const [res, s] = await Promise.all([
         api.get(`/customers?${params}`),
-        api.get('/customers/stats/summary').catch(() => ({ data: {} })),
+        api.get('/customers/stats/summary').catch((err) => {
+          console.warn('Failed to load customer stats:', err.message);
+          return { data: {} };
+        }),
       ]);
       setCustomers(res.data.customers);
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);
       setStats(s.data);
-    } catch {
+    } catch (err) {
+      console.error('Fetch customers error:', err.message);
       setLoadError('Unable to load customers right now.');
-      toast.error('Failed to load customers');
+      toast.error(err.response?.data?.message || 'Failed to load customers');
     }
     finally { setLoading(false); }
   }, [page, search, segmentFilter]);

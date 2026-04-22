@@ -51,7 +51,8 @@ export default function AuthCallback() {
           toast.success('Welcome back! 👋');
           setTimeout(() => navigate('/dashboard'), 400);
         }
-      } catch {
+      } catch (err) {
+        console.error('Auth callback error:', err.message);
         toast.error('Failed to load your profile. Please try again.');
         navigate('/login');
       }

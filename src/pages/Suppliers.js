@@ -41,9 +41,10 @@ export default function Suppliers() {
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);
       setStats(statsRes.data);
-    } catch {
+    } catch (err) {
+      console.error('Fetch suppliers error:', err.message);
       setLoadError('Unable to load suppliers right now.');
-      toast.error('Failed to load suppliers');
+      toast.error(err.response?.data?.message || 'Failed to load suppliers');
     }
     finally { setLoading(false); }
   }, [page, search, categoryFilter]);
@@ -73,8 +74,14 @@ export default function Suppliers() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this supplier?')) return;
-    try { await api.delete(`/suppliers/${id}`); toast.success('Supplier deleted'); fetchData(); }
-    catch { toast.error('Failed to delete'); }
+    try {
+      await api.delete(`/suppliers/${id}`);
+      toast.success('Supplier deleted');
+      fetchData();
+    } catch (err) {
+      console.error('Delete supplier error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to delete supplier');
+    }
   };
 
   const stars = (r) => r ? '★'.repeat(r) + '☆'.repeat(5 - r) : '—';

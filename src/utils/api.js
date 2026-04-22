@@ -16,6 +16,7 @@ const clearGetCache = () => {
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  timeout: 30000, // 30 second timeout for all requests
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -73,10 +74,17 @@ api.interceptors.response.use(
     const method = (err.config?.method || '').toLowerCase();
 
     if (err.response?.status === 401) {
+      console.warn('Authentication required - redirecting to login');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
+    } else if (err.code === 'ECONNABORTED') {
+      console.error('Request timeout - server took too long to respond');
+    } else if (!err.response) {
+      console.error('Network error:', err.message);
+    } else {
+      console.error(`API Error (${err.response.status}):`, err.response.data);
     }
 
     if (['post', 'put', 'patch', 'delete'].includes(method)) {

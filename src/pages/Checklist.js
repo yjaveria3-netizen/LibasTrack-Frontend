@@ -392,8 +392,9 @@ export default function Checklist() {
     try {
       const res = await api.get('/checklist');
       setData(res.data);
-    } catch {
-      toast.error('Failed to load checklist');
+    } catch (err) {
+      console.error('Fetch checklist error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to load checklist');
     } finally {
       setLoading(false);
     }
@@ -427,8 +428,9 @@ export default function Checklist() {
     });
     try {
       await api.patch(`/checklist/${id}/toggle`);
-    } catch {
-      toast.error('Failed to update');
+    } catch (err) {
+      console.error('Toggle checklist item error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to update');
       fetchChecklist();
     }
   };
@@ -473,8 +475,9 @@ export default function Checklist() {
       await api.delete(`/checklist/${id}`);
       toast.success('Task deleted');
       fetchChecklist();
-    } catch {
-      toast.error('Failed to delete');
+    } catch (err) {
+      console.error('Delete checklist task error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to delete task');
     }
   };
 

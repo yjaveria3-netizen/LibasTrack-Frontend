@@ -43,12 +43,17 @@ export default function DriveSetup() {
   const [importResults, setImportResults] = useState(null);
 
   useEffect(() => {
-    api.get('/drive/status').then(r => {
-      if (r.data.connected) {
-        setStatus(r.data);
-        setSheets(r.data.spreadsheets);
-      }
-    }).catch(() => { });
+    api.get('/drive/status')
+      .then(r => {
+        if (r.data.connected) {
+          setStatus(r.data);
+          setSheets(r.data.spreadsheets);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load drive status:', err.message);
+        setStatus(null);
+      });
   }, []);
 
   const handleConnect = async (e) => {

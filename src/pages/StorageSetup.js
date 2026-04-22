@@ -68,8 +68,9 @@ export default function StorageSetup() {
       await api.post('/storage/switch', { storageType: 'google_drive' });
       await refreshUser();
       navigate('/drive-setup');
-    } catch {
-      toast.error('Connection failed. Please try again.');
+    } catch (err) {
+      console.error('Google Drive setup error:', err.message);
+      toast.error(err.response?.data?.message || 'Connection failed. Please try again.');
     }
   };
 

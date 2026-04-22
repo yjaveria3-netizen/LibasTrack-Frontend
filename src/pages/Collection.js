@@ -42,9 +42,10 @@ export default function Collection() {
       const res = await api.get(`/collections?${params}`);
       setCollections(res.data.collections || []);
       setTotal(res.data.total || 0);
-    } catch {
+    } catch (err) {
+      console.error('Fetch collections error:', err.message);
       setLoadError('Unable to load collections right now.');
-      toast.error('Failed to load collections');
+      toast.error(err.response?.data?.message || 'Failed to load collections');
     }
     finally { setLoading(false); }
   }, [search, statusFilter]);
@@ -70,8 +71,14 @@ export default function Collection() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this collection?')) return;
-    try { await api.delete(`/collections/${id}`); toast.success('Collection deleted'); fetchData(); }
-    catch { toast.error('Failed to delete'); }
+    try {
+      await api.delete(`/collections/${id}`);
+      toast.success('Collection deleted');
+      fetchData();
+    } catch (err) {
+      console.error('Delete collection error:', err.message);
+      toast.error(err.response?.data?.message || 'Failed to delete collection');
+    }
   };
 
   return (
