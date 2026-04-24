@@ -35,21 +35,16 @@ export const AuthProvider = ({ children }) => {
 
   // ── Auto restore session ────────────────
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUser();
+    fetchUser();
 
-      const refreshInterval = setInterval(async () => {
-        try {
-          const res = await api.post('/auth/refresh');
-          if (res.data.token) localStorage.setItem('token', res.data.token);
-        } catch {}
-      }, 24 * 60 * 60 * 1000);
+    const refreshInterval = setInterval(async () => {
+      try {
+        const res = await api.post('/auth/refresh');
+        if (res.data.token) localStorage.setItem('token', res.data.token);
+      } catch {}
+    }, 24 * 60 * 60 * 1000);
 
-      return () => clearInterval(refreshInterval);
-    } else {
-      setLoading(false);
-    }
+    return () => clearInterval(refreshInterval);
   }, [fetchUser]);
 
   // ── ✅ FIXED Google OAuth ────────────────
