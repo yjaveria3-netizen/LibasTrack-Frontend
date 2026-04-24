@@ -11,6 +11,8 @@ import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import BrandOnboarding from './pages/BrandOnboarding';
 import StorageSetup from './pages/StorageSetup';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
@@ -104,6 +106,8 @@ function AppRoutes() {
       {/* ── Public / Unauthenticated ── */}
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* ── Setup Flow (requires auth, skips full protection) ── */}
