@@ -1,5 +1,7 @@
 import React from 'react';
 
+const CHUNK_RELOAD_KEY = 'libastrack_chunk_reload';
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -13,13 +15,34 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Keep diagnostics in console for developers.
     console.error('Unhandled UI error:', error, errorInfo);
+
+    const message = `${error?.name || ''} ${error?.message || ''}`.toLowerCase();
+    const isChunkLoadError =
+      message.includes('chunkloaderror') ||
+      message.includes('loading chunk') ||
+      message.includes('failed to fetch dynamically imported module');
+
+    if (isChunkLoadError) {
+      const alreadyRetried = window.sessionStorage.getItem(CHUNK_RELOAD_KEY) === 'true';
+
+      if (!alreadyRetried) {
+        window.sessionStorage.setItem(CHUNK_RELOAD_KEY, 'true');
+        window.location.reload();
+        return;
+      }
+    }
   }
 
   handleReload = () => {
+    window.sessionStorage.removeItem(CHUNK_RELOAD_KEY);
     window.location.reload();
   };
 
   render() {
+    if (!this.state.hasError && window.sessionStorage.getItem(CHUNK_RELOAD_KEY) === 'true') {
+      window.sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+    }
+
     if (this.state.hasError) {
       return (
         <div style={{
