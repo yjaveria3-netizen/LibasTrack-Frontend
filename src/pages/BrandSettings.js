@@ -20,7 +20,7 @@ function SettingCard({ icon, title, subtitle, children, delay = 0 }) {
       <div style={{
         background: 'var(--bg-layer1)',
         border: '1px solid var(--border-faint)',
-        borderRadius: 16,
+        borderRadius: 'var(--radius)',
         overflow: 'hidden',
         boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
       }}>
@@ -34,7 +34,7 @@ function SettingCard({ icon, title, subtitle, children, delay = 0 }) {
           background: 'rgba(167,139,250,0.03)',
         }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 10,
+            width: 38, height: 38, borderRadius: 'var(--radius-sm)',
             background: 'var(--accent-soft)',
             border: '1px solid var(--accent-border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -145,13 +145,13 @@ export default function BrandSettings() {
         <Reveal delay={0.05} direction="none">
           <div style={{
             display: 'flex', alignItems: 'center', gap: 20,
-            padding: '20px 24px', borderRadius: 14, marginBottom: 32,
+            padding: '20px 24px', borderRadius: 'var(--radius)', marginBottom: 32,
             background: 'linear-gradient(135deg, var(--accent-soft) 0%, rgba(167,139,250,0.04) 100%)',
             border: '1px solid var(--accent-border)',
           }}>
             {/* Avatar */}
             <div style={{
-              width: 56, height: 56, borderRadius: 14, flexShrink: 0,
+              width: 56, height: 56, borderRadius: 'var(--radius)', flexShrink: 0,
               background: 'linear-gradient(135deg, var(--accent), var(--accent-deep))',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.5rem',
@@ -318,7 +318,7 @@ export default function BrandSettings() {
 
             {/* Currency preview */}
             <div style={{
-              marginTop: 8, padding: '12px 16px', borderRadius: 10,
+              marginTop: 8, padding: '12px 16px', borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-layer2)', border: '1px solid var(--border-faint)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
