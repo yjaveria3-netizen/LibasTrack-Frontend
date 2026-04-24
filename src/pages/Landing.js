@@ -314,7 +314,7 @@ export default function Landing() {
           >
             Run your entire
             <br />
-            <span className="lt-hero__headline-em">fashion brand</span>
+            <em className="lt-hero__headline-em">fashion brand</em>
             <br />
             from one place.
           </motion.h1>
@@ -388,10 +388,6 @@ export default function Landing() {
           aria-hidden="true"
         >
           <div className="lt-mockup">
-            <div className="lt-mockup__status-bar">
-              <span>SYSTEM: STABLE</span>
-              <span>SYNC: LIVE</span>
-            </div>
             {/* Window chrome */}
             <div className="lt-mockup__chrome">
               <div className="lt-mockup__dot" style={{ background: '#FF5F57' }} />
