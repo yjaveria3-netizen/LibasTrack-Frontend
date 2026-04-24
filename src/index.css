@@ -5243,7 +5243,166 @@ tr:hover td {
     padding-right: 14px;
   }
 
-  .phases-grid {
-    grid-template-columns: 1fr !important;
+.phases-grid {
+  grid-template-columns: 1fr !important;
+}
+}
+
+/* ============================================================
+   FINAL UI POLISH
+   ============================================================ */
+.page-header {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-layer1) 92%, transparent) 0%, color-mix(in srgb, var(--bg-base) 94%, transparent) 100%);
+}
+
+.page-subtitle {
+  max-width: 760px;
+}
+
+.card,
+.table-container,
+.modal,
+.stat-card,
+.module-card,
+.mini-panel {
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+}
+
+.card,
+.stat-card,
+.module-card,
+.mini-panel {
+  border-color: color-mix(in srgb, var(--accent-border) 72%, transparent);
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  flex: 1 1 280px;
+}
+
+.pagination {
+  background: color-mix(in srgb, var(--bg-layer1) 88%, transparent);
+}
+
+.page-btn {
+  min-width: 88px;
+  justify-content: center;
+}
+
+.section-label {
+  opacity: 0.92;
+}
+
+.action-desc,
+.module-desc,
+.page-info {
+  line-height: 1.5;
+}
+
+.btn-ctrl,
+.theme-toggle-compact,
+.mobile-theme-btn,
+.menu-trigger {
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.btn-ctrl:hover,
+.theme-toggle-compact:hover,
+.mobile-theme-btn:hover,
+.menu-trigger:hover {
+  transform: translateY(-1px);
+}
+
+.identity-card,
+.quick-action-button,
+.module-card,
+.stat-card,
+.table-container,
+.modal {
+  overflow: hidden;
+}
+
+[data-theme="light"] .page-header {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-layer1) 96%, transparent) 0%, color-mix(in srgb, white 92%, transparent) 100%);
+}
+
+@media (max-width: 992px) {
+  .page-transition-wrapper,
+  .dashboard-wrapper,
+  .modules-grid-wrap,
+  .sidebar-panels {
+    min-width: 0;
+  }
+
+  .table-toolbar > * {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-toolbar {
+    align-items: stretch;
+  }
+
+  .search-input-wrapper,
+  .status-filter,
+  .table-toolbar .btn,
+  .table-toolbar button {
+    width: 100%;
+    max-width: none !important;
+  }
+
+  .pagination {
+    justify-content: center;
+    padding: 14px 16px;
+  }
+
+  .page-btn {
+    min-width: 0;
+    flex: 1 1 120px;
+  }
+
+  .card,
+  .table-container,
+  .modal,
+  .stat-card,
+  .module-card,
+  .mini-panel {
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .page-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .section-label {
+    letter-spacing: 0.13em;
+  }
+
+  .page-btn {
+    flex: 1 1 100%;
+  }
+
+  .pagination {
+    gap: 8px;
+  }
+
+  .modal-title {
+    font-size: 1.15rem;
+  }
+
+  .card-header {
+    margin-bottom: 14px;
   }
 }
