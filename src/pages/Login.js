@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  Sparkles,
   Package,
   ShoppingBag,
   Users,
@@ -92,110 +91,24 @@ export default function Login() {
         <div className="auth-ambient__grid" />
       </div>
 
-      {/* Left Panel - Branding */}
+      {/* Left Panel - Empty Image Slot */}
       <motion.div
-        className="auth-panel auth-panel--left"
+        className="auth-panel auth-panel--left auth-panel--image"
         initial={{ opacity: 0, x: -60 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         aria-hidden="true"
       >
-        {/* Decorative Background Icon */}
-        <div className="auth-panel__bg-letter" style={{ fontSize: '20vw', opacity: 0.05 }}>
-          <Sparkles size={200} />
-        </div>
-
-        <div className="auth-panel__content">
-          {/* Back Button */}
-          <button
-            className="auth-back-btn"
-            onClick={() => navigate('/')}
-            tabIndex={-1}
-          >
-            <ArrowLeft size={16} />
-            <span>Back to Home</span>
-          </button>
-
-          {/* Logo */}
-          <div className="auth-logo">
-            <div className="auth-logo__icon">
-              <Sparkles size={24} />
-            </div>
-            <span className="auth-logo__text">LibasTrack</span>
-          </div>
-
-          {/* Animated Headline */}
-          <h1 className="auth-headline">
-            Your brand.{' '}
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={taglineIdx}
-                className="auth-headline__swap"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.4 }}
-              >
-                {TAGLINES[taglineIdx]}
-              </motion.span>
-            </AnimatePresence>
-          </h1>
-
-          <p className="auth-description">
-            LibasTrack gives fashion brands the complete toolkit — orders, inventory, CRM,
-            suppliers, returns, and checklist — with live Google Sheets sync.
-          </p>
-
-          {/* Modules Grid */}
-          <div className="auth-modules">
-            {MODULES.map((m, i) => {
-              const Icon = m.icon;
-              return (
-                <motion.div
-                  key={m.label}
-                  className={`auth-module ${i === activeModule ? 'auth-module--active' : ''}`}
-                  animate={{ 
-                    scale: i === activeModule ? 1.08 : 1, 
-                    opacity: i === activeModule ? 1 : 0.5 
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div 
-                    className="auth-module__icon"
-                    style={{ 
-                      background: i === activeModule ? m.color : 'var(--bg-layer2)',
-                      boxShadow: i === activeModule ? `0 0 20px ${m.color}40` : 'none'
-                    }}
-                  >
-                    <Icon size={16} />
-                  </div>
-                  <span className="auth-module__label">{m.label}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Stats */}
-          <div className="auth-stats">
-            {[
-              { val: '8', label: 'Modules', icon: Package },
-              { val: '50+', label: 'Currencies', icon: Globe },
-              { val: '100%', label: 'Free', icon: Zap },
-            ].map((s, i) => {
-              const Icon = s.icon;
-              return (
-                <React.Fragment key={s.label}>
-                  {i > 0 && <div className="auth-stats__divider" />}
-                  <div className="auth-stat">
-                    <Icon size={16} className="auth-stat__icon" />
-                    <div className="auth-stat__value">{s.val}</div>
-                    <div className="auth-stat__label">{s.label}</div>
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
+        <motion.img
+          src="/image3..jpg"
+          alt=""
+          aria-hidden="true"
+          className="auth-panel__image-slot"
+          initial={{ opacity: 0, scale: 1.03 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.06 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        />
       </motion.div>
 
       {/* Right Panel - Login Form */}
@@ -206,9 +119,8 @@ export default function Login() {
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="auth-form-container">
-          {/* Mobile Back Button */}
           <button
-            className="auth-back-btn auth-back-btn--mobile"
+            className="auth-back-btn"
             onClick={() => navigate('/')}
             aria-label="Go back to home page"
           >
@@ -216,7 +128,6 @@ export default function Login() {
             <span>Back to Home</span>
           </button>
 
-          {/* Form Header */}
           <motion.div
             className="auth-form-header"
             initial={{ opacity: 0, y: 24 }}
@@ -233,7 +144,6 @@ export default function Login() {
             </p>
           </motion.div>
 
-          {/* Divider */}
           <motion.div 
             className="auth-divider"
             initial={{ scaleX: 0 }}
@@ -241,7 +151,6 @@ export default function Login() {
             transition={{ delay: 0.5, duration: 0.6 }}
           />
 
-          {/* Google Login Button */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -271,7 +180,6 @@ export default function Login() {
             </button>
           </motion.div>
 
-          {/* Info Cards */}
           <motion.div
             className="auth-info-cards"
             initial={{ opacity: 0 }}
@@ -297,7 +205,6 @@ export default function Login() {
             })}
           </motion.div>
 
-          {/* Fine Print */}
           <motion.p
             className="auth-fine-print"
             initial={{ opacity: 0 }}

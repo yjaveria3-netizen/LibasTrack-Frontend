@@ -225,6 +225,12 @@ export default function Landing() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '18%']);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.96]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroBgY = useTransform(scrollYProgress, [0, 1], ['0%', '-14%']);
+  const heroVisualY = useTransform(scrollYProgress, [0, 1], ['0%', '-8%']);
+
+  const howRef = useRef(null);
+  const { scrollYProgress: howScrollYProgress } = useScroll({ target: howRef, offset: ['start end', 'end start'] });
+  const howImageY = useTransform(howScrollYProgress, [0, 1], ['14%', '-12%']);
 
   const [navScrolled, setNavScrolled] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
@@ -379,10 +385,11 @@ export default function Landing() {
       <section ref={heroRef} className="landing-hero" aria-label="Hero section">
         {/* Background Image with Parallax */}
         <div className="landing-hero-bg">
-          <img 
+          <motion.img
             src="/image1.jpg" 
             alt="Background" 
             className="landing-hero-bg__image"
+            style={{ y: heroBgY }}
           />
           <div className="landing-hero-bg__overlay" />
         </div>
@@ -475,6 +482,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          style={{ y: heroVisualY }}
           aria-hidden="true"
         >
           <div className="landing-mockup">
@@ -652,7 +660,7 @@ export default function Landing() {
       </section>
 
       {/* ═══════════════ HOW IT WORKS ═══════════════ */}
-      <section id="how-it-works" className="landing-section landing-section--alt" aria-labelledby="how-heading">
+      <section ref={howRef} id="how-it-works" className="landing-section landing-section--alt" aria-labelledby="how-heading">
         <div className="landing-section__inner">
           <Reveal>
             <div className="landing-section__header">
@@ -693,7 +701,7 @@ export default function Landing() {
 
             <Reveal delay={0.3}>
               <div className="landing-how-image">
-                <img src="/image2.jpg" alt="LibasTrack flow" />
+                <motion.img src="/image2.jpg" alt="LibasTrack flow" style={{ y: howImageY }} />
               </div>
             </Reveal>
           </div>
