@@ -24,6 +24,7 @@ import Checklist from './pages/Checklist';
 import Collection from './pages/Collection';
 import DriveSetup from './pages/DriveSetup';
 import BrandSettings from './pages/BrandSettings';
+import Help from './pages/Help';
 import Layout from './components/Layout';
 
 const swrFetcher = async (url) => {
@@ -127,6 +128,7 @@ function AppRoutes() {
         <Route path="/collections" element={<Collection />} />
         <Route path="/drive-setup" element={<DriveSetup />} />
         <Route path="/brand-settings" element={<BrandSettings />} />
+        <Route path="/help" element={<Help />} />
       </Route>
 
       {/* ── Catch-All ── */}

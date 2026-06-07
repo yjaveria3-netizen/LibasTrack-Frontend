@@ -18,6 +18,7 @@ import {
   Settings,
   Plus,
   CreditCard,
+  HelpCircle,
 } from 'lucide-react';
 
 // Flat list of all nav destinations (used by CommandPalette)
@@ -88,6 +89,12 @@ export const NAV_ITEMS = [
     icon: <Settings size={20} />, 
     section: 'Setup' 
   },
+  { 
+    label: 'Help', 
+    to: '/help', 
+    icon: <HelpCircle size={20} />, 
+    section: 'Support' 
+  },
 ];
 
 // Grouped structure for the sidebar (used by Layout.js)
@@ -96,7 +103,8 @@ export const NAV_GROUPS = [
   { section: 'Commerce', items: NAV_ITEMS.slice(1, 5) },
   { section: 'Operations', items: NAV_ITEMS.slice(5, 8) },
   { section: 'Planning', items: [NAV_ITEMS[8]] },
-  { section: 'Setup', items: NAV_ITEMS.slice(9) },
+  { section: 'Setup', items: NAV_ITEMS.slice(9, 11) },
+  { section: 'Support', items: [NAV_ITEMS[11]] },
 ];
 
 // Quick actions for Dashboard and CommandPalette
