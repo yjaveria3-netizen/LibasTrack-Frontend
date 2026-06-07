@@ -80,56 +80,19 @@ export default function Dashboard() {
     setLoading(true);
     setLoadError('');
     try {
-      const [products, orders, customers, financial, suppliers, revenueChart, topProducts, topCustomers, lowStock, returns] = await Promise.all([
-        api.get('/products/stats/summary').catch((err) => {
-          console.warn('Failed to load product stats:', err.message);
-          return { data: {} };
-        }),
-        api.get('/orders/stats/summary').catch((err) => {
-          console.warn('Failed to load order stats:', err.message);
-          return { data: {} };
-        }),
-        api.get('/customers/stats/summary').catch((err) => {
-          console.warn('Failed to load customer stats:', err.message);
-          return { data: {} };
-        }),
-        api.get('/financial/stats/summary').catch((err) => {
-          console.warn('Failed to load financial stats:', err.message);
-          return { data: {} };
-        }),
-        api.get('/suppliers/stats/summary').catch((err) => {
-          console.warn('Failed to load supplier stats:', err.message);
-          return { data: {} };
-        }),
-        api.get('/orders/stats/revenue-chart').catch((err) => {
-          console.warn('Failed to load revenue chart:', err.message);
-          return { data: { sparkData: [] } };
-        }),
-        api.get('/orders/stats/top-products').catch((err) => {
-          console.warn('Failed to load top products:', err.message);
-          return { data: { topProducts: [] } };
-        }),
-        api.get('/customers/stats/top').catch((err) => {
-          console.warn('Failed to load top customers:', err.message);
-          return { data: { topCustomers: [] } };
-        }),
-        api.get('/products/stats/low-stock').catch((err) => {
-          console.warn('Failed to load low stock products:', err.message);
-          return { data: { lowStockProducts: [] } };
-        }),
-        api.get('/returns/stats/summary').catch((err) => {
-          console.warn('Failed to load returns stats:', err.message);
-          return { data: {} };
-        }),
-      ]);
+      const response = await api.get('/dashboard/summary');
+      const data = response?.data || {}; 
       setStats({
-        products: products.data, orders: orders.data,
-        customers: customers.data, financial: financial.data, suppliers: suppliers.data,
-        sparkData: revenueChart.data.sparkData || [],
-        topProducts: topProducts.data.topProducts || [],
-        topCustomers: topCustomers.data.topCustomers || [],
-        lowStock: lowStock.data.lowStockProducts || [],
-        returns: returns.data || {},
+        products: data.products || {},
+        orders: data.orders || {},
+        customers: data.customers || {},
+        financial: data.financial || {},
+        suppliers: data.suppliers || {},
+        sparkData: data.sparkData || [],
+        topProducts: data.topProducts || [],
+        topCustomers: data.topCustomers || [],
+        lowStock: data.lowStock || [],
+        returns: data.returns || {},
       });
     } catch (e) {
       console.error('Dashboard stats error:', e);

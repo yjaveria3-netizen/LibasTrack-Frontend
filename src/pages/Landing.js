@@ -247,45 +247,8 @@ export default function Landing() {
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    const handleHeroParallax = () => {
-      const bgImage = document.querySelector('.landing-hero-bg__image');
-      if (!bgImage) return;
-
-      // Disable parallax on mobile devices for better performance
-      if (window.innerWidth < 768) {
-        bgImage.style.transform = 'translateY(0)';
-        return;
-      }
-
-      const scrollPercent = window.scrollY / window.innerHeight;
-      const offset = scrollPercent * 20;
-
-      bgImage.style.transform = `translateY(${offset}px)`;
-    };
-
-    window.addEventListener('scroll', handleHeroParallax, { passive: true });
-    return () => window.removeEventListener('scroll', handleHeroParallax);
-  }, []);
-
-  useEffect(() => {
-    const handleParallax = () => {
-      const bgElement = document.querySelector('.landing-testimonials-bg__image');
-      if (!bgElement) return;
-
-      const element = bgElement.closest('.landing-testimonials-section');
-      if (!element) return;
-
-      const rect = element.getBoundingClientRect();
-      const scrollPercent = (window.innerHeight - rect.top) / (window.innerHeight + rect.height);
-      const offset = scrollPercent * 30;
-
-      bgElement.style.transform = `translateY(${offset}px) scale(1.05)`;
-    };
-
-    window.addEventListener('scroll', handleParallax, { passive: true });
-    return () => window.removeEventListener('scroll', handleParallax);
-  }, []);
+  // Reduce scroll work by using framer-motion scroll transforms only.
+  // Manual DOM-based parallax is removed because it adds extra layout cost.
 
   return (
     <div className="landing-page">
@@ -701,7 +664,13 @@ export default function Landing() {
 
             <Reveal delay={0.3}>
               <div className="landing-how-image">
-                <motion.img src="/image2.jpg" alt="LibasTrack flow" style={{ y: howImageY }} />
+                <motion.img
+                  src="/image2.jpg"
+                  alt="LibasTrack flow"
+                  loading="lazy"
+                  decoding="async"
+                  style={{ y: howImageY }}
+                />
               </div>
             </Reveal>
           </div>

@@ -2860,18 +2860,20 @@ body[data-theme="light"] .landing-nav__link:hover,
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100%;  /* must match parent height */
   z-index: 0;
+  overflow: hidden; /* add this */
 }
 
 .landing-hero-bg__image {
+ position: absolute; /* add this */
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
-  will-change: transform;
+  object-position: center top; /* pulls image upward so face/content stays visible */
   display: block;
-  flex-shrink: 0;
 }
 
 @supports (object-fit: cover) {

@@ -100,9 +100,11 @@ export default function Login() {
         aria-hidden="true"
       >
         <motion.img
-          src="/image3..jpg"
+          src="/image3.jpg"
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
           className="auth-panel__image-slot"
           initial={{ opacity: 0, scale: 1.03 }}
           animate={{ opacity: 1, scale: 1 }}

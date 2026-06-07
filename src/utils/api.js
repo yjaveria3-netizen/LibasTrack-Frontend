@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 2 * 60 * 1000; // Cache GET responses for 2 minutes to reduce repeated load
 const responseCache = new Map();
 
 const buildCacheKey = (config) => {
