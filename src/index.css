@@ -4020,12 +4020,17 @@ body[data-theme="light"] .landing-section__sub {
   position: relative;
   z-index: 1;
   padding: 120px 32px;
+  width: 100%;
 }
 
 .landing-cta__card {
-  max-width: 900px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.85) 0%, rgba(168, 85, 247, 0.6) 50%, rgba(236, 72, 153, 0.55) 100%);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.68) 100%);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   border-radius: var(--radius-xl);
   padding: 80px 64px;
   text-align: center;
@@ -4044,15 +4049,7 @@ body[data-theme="light"] .landing-section__sub {
   animation: rotate 20s linear infinite;
 }
 
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
 
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 .landing-cta__content {
   position: relative;
