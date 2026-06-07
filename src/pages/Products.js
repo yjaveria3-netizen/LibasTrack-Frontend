@@ -19,7 +19,7 @@ const EMPTY = {
   name: '', description: '', category: '', subcategory: '', collection: '',
   season: 'Year-Round', fabric: '', careInstructions: '', costPrice: '', price: '',
   salePrice: '', currency: 'PKR', sku: '', stockQty: '', lowStockAlert: '5',
-  status: 'Active', isFeatured: false, tags: '',
+  status: 'Active', isFeatured: false, tags: '', supplierId: '',
 };
 
 /* ── Helpers ────────────────────────────────────────────────────── */
@@ -204,6 +204,9 @@ export default function Products() {
   const [imagePreview, setImagePreview] = useState(null);
   const [removeImage, setRemoveImage] = useState(false);
   const [stats, setStats] = useState(null);
+  const [collections, setCollections] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [autoLinking, setAutoLinking] = useState(false);
 
   /* ── Data fetching ── */
   const fetchProducts = useCallback(async () => {
@@ -229,7 +232,23 @@ export default function Products() {
     finally { setLoading(false); }
   }, [page, search, categoryFilter, statusFilter]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  const fetchCollectionsAndSuppliers = useCallback(async () => {
+    try {
+      const [colsRes, supRes] = await Promise.all([
+        api.get('/collections').catch(() => ({ data: { collections: [] } })),
+        api.get('/suppliers').catch(() => ({ data: { suppliers: [] } })),
+      ]);
+      setCollections(colsRes.data.collections || []);
+      setSuppliers(supRes.data.suppliers || []);
+    } catch (err) {
+      console.error('Failed to fetch collections/suppliers:', err);
+    }
+  }, []);
+
+  useEffect(() => { 
+    fetchProducts(); 
+    fetchCollectionsAndSuppliers();
+  }, [fetchProducts, fetchCollectionsAndSuppliers]);
 
   /* ── Form helpers ── */
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -266,6 +285,24 @@ export default function Products() {
     setImageFile(null);
     setImagePreview(null);
     setRemoveImage(true);
+  };
+
+  /* ── Auto-link images ── */
+  const handleAutoLinkImages = async () => {
+    if (!user?.storageType) {
+      toast.error('Storage not configured');
+      return;
+    }
+    setAutoLinking(true);
+    try {
+      const res = await api.post('/products/auto-link-images', { mode: user.storageType === 'local_excel' ? 'local' : 'drive' });
+      toast.success(res.data.message || `Linked ${res.data.linkedCount} images`);
+      fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to auto-link images');
+    } finally {
+      setAutoLinking(false);
+    }
   };
 
   /* ── Save ── */
@@ -334,9 +371,21 @@ export default function Products() {
             </div>
           </Reveal>
           <Reveal delay={0.15} direction="left">
-            <button className="btn btn-primary" onClick={openAdd}>
-              + Add Item
-            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {user?.storageType === 'local_excel' && (
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={handleAutoLinkImages}
+                  disabled={autoLinking}
+                  style={{ fontSize: '0.85rem', padding: '10px 20px' }}
+                >
+                  {autoLinking ? '🔄 Linking...' : '🔗 Auto-Link Images'}
+                </button>
+              )}
+              <button className="btn btn-primary" onClick={openAdd}>
+                + Add Item
+              </button>
+            </div>
           </Reveal>
         </div>
       </div>
@@ -621,6 +670,20 @@ export default function Products() {
                       <label className="form-label">Season</label>
                       <select className="form-select" value={form.season} onChange={e => set('season', e.target.value)}>
                         {SEASONS.map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Collection</label>
+                      <select className="form-select" value={form.collection} onChange={e => set('collection', e.target.value)}>
+                        <option value="">Select collection</option>
+                        {collections.map(c => <option key={c._id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Supplier</label>
+                      <select className="form-select" value={form.supplierId} onChange={e => set('supplierId', e.target.value)}>
+                        <option value="">Select supplier</option>
+                        {suppliers.map(s => <option key={s._id} value={s.supplierId}>{s.name}</option>)}
                       </select>
                     </div>
                     <div className="form-group">
