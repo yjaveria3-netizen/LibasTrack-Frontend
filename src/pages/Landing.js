@@ -386,7 +386,7 @@ export default function Landing() {
         {/* Background Image with Parallax */}
         <div className="landing-hero-bg">
           <motion.img
-            src="/image1.jpg" 
+            src="/image4.jpg" 
             alt="Background" 
             className="landing-hero-bg__image"
             style={{ y: heroBgY }}
@@ -839,7 +839,15 @@ export default function Landing() {
       {/* ═══════════════ CTA BANNER ═══════════════ */}
       <section className="landing-cta" aria-label="Call to action">
         <Reveal>
-          <div className="landing-cta__card">
+          <div
+            className="landing-cta__card"
+            style={{
+              backgroundImage: `linear-gradient(135deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.68) 100%), url(${process.env.PUBLIC_URL}/image1.jpg)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'overlay',
+            }}
+          >
             <div className="landing-cta__glow" aria-hidden="true" />
             <div className="landing-cta__content">
               <div className="landing-eyebrow landing-eyebrow--light">
