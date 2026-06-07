@@ -225,7 +225,7 @@ export default function Landing() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '18%']);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.96]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const heroBgY = useTransform(scrollYProgress, [0, 1], ['0%', '-14%']);
+  const heroBgY = useTransform(scrollYProgress, [0, 1], ['0%', '-0%']);
   const heroVisualY = useTransform(scrollYProgress, [0, 1], ['0%', '-8%']);
 
   const howRef = useRef(null);
