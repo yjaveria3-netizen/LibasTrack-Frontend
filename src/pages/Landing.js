@@ -864,7 +864,7 @@ export default function Landing() {
             <button className="landing-footer__link" onClick={() => navigate('/login')}>Sign In</button>
             <button className="landing-footer__link" onClick={() => navigate('/privacy')}>Privacy Policy</button>
             <button className="landing-footer__link" onClick={() => navigate('/terms')}>Terms of Service</button>
-            <a href="mailto:support@libastrack.com" className="landing-footer__link">Contact</a>
+            <a href="mailto:yjaveria3@gmail.com" className="landing-footer__link">Contact</a>
           </nav>
 
           <div className="landing-footer__copy">

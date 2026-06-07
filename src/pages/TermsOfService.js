@@ -72,7 +72,7 @@ export default function TermsOfService() {
             <h2>Contact</h2>
             <p>
               For questions about these terms, contact{' '}
-              <a href="mailto:support@libastrack.com">support@libastrack.com</a>.
+              <a href="mailto:yjaveria3@gmail.com">yjaveria3@gmail.com</a>.
             </p>
           </section>
         </div>

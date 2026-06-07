@@ -119,7 +119,7 @@ export default function PrivacyPolicy() {
             <h2>Contact</h2>
             <p>
               If you have privacy questions, contact us at{' '}
-              <a href="mailto:support@libastrack.com">support@libastrack.com</a>.
+              <a href="mailto:yjaveria3@gmail.com">yjaveria3@gmail.com</a>.
             </p>
           </section>
         </div>

@@ -33,7 +33,7 @@ export default function Footer() {
       links: [
         { label: 'Privacy Policy', href: '/privacy' },
         { label: 'Terms of Service', href: '/terms' },
-        { label: 'Contact', href: 'mailto:support@libastrack.com' },
+        { label: 'Contact', href: 'mailto:yjaveria3@gmail.com' },
       ],
     },
     {
@@ -41,7 +41,7 @@ export default function Footer() {
       links: [
         { label: 'Twitter', href: 'https://twitter.com/libastrack', target: '_blank' },
         { label: 'Instagram', href: 'https://instagram.com/libastrack', target: '_blank' },
-        { label: 'Email', href: 'mailto:support@libastrack.com' },
+        { label: 'Email', href: 'mailto:yjaveria3@gmail.com' },
       ],
     },
   ];
@@ -140,7 +140,7 @@ export default function Footer() {
             <a href="/terms" className="footer-link" onClick={(e) => { e.preventDefault(); handleNavigation('/terms'); }}>
               Terms
             </a>
-            <a href="mailto:support@libastrack.com" className="footer-link">
+            <a href="mailto:yjaveria3@gmail.com" className="footer-link">
               Support
             </a>
           </div>
