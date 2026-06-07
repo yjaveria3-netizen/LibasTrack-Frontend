@@ -22,6 +22,14 @@ const EMPTY = {
   status: 'Active', isFeatured: false, tags: '',
 };
 
+/* ── Helpers ────────────────────────────────────────────────────── */
+const margin = (cost, price) => {
+  const c = parseFloat(cost);
+  const p = parseFloat(price);
+  if (!c || !p || p === 0) return null;
+  return Math.round(((p - c) / p) * 100);
+};
+
 /* ── Image Upload Zone ─────────────────────────────────────────── */
 function ImageUploadZone({ preview, onFileSelect, onRemove }) {
   const fileRef = useRef();
